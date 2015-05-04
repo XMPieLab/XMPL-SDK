@@ -1,0 +1,63 @@
+/* ==========================================================
+* xmp.css 1.0, build 28
+* ==========================================================
+* Copyright 2015 XMPie, LTD.
+* ========================================================== */
+
+.xmp-facebook-share-btn
+{
+	background-image: url('../images/facebookShareIcon.png');
+	width:57px;
+	height:18px;
+	padding:0;
+	margin:0;
+	border:0;
+}
+
+.xmp-busy
+{
+	background-image: url('../images/AjaxLoading.gif');
+	background-size: contain;
+	background-repeat:no-repeat;
+	width:32px;
+	height:32px;	
+	display:inline-block;
+}
+
+.xmp-button-on-demand
+{
+	display:inline-block;
+	text-align:center;
+	position:relative;
+	top:0;
+	left:0;
+}
+
+.xmp-busy-on-demand
+{
+	background-image: url('../images/AjaxLoadingPDF.gif');
+	background-size: contain;
+	background-repeat:no-repeat;
+	width:16px;
+	height:11px;
+	margin-left:-8px;	
+	margin-top:-6px;
+	display:inline-block;
+	position:absolute;
+	top:50%;
+	left:50%;
+}
+
+.xmp-hide
+{
+	visibility:hidden;
+}
+
+.xmp-remove,
+xmp-email,
+xmpResource.adorsToSetOnLoad,
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak,
+[xmp\:cloak], [xmp-cloak], [data-xmp-cloak], [x-xmp-cloak], .xmp-cloak, .x-xmp-cloak {
+display: none !important;
+}
+
