@@ -1,0 +1,57 @@
+<div 	xmp-tracking-page-name="landing page" 
+		xmp-cloak
+		>
+	<div class="section">
+		<div class="section-title">Text ADOR</div>
+		<div class="section-content">
+			<div>{{xmp.r['First Name']}}</div>
+			<div>hello {{xmp.r['First Name']}} {{xmp.r['Last Name']}}</div>
+		</div>
+	</div>
+	<div class="section">
+		<div class="section-title">Image ADOR</div>
+		<div class="section-content">
+			<!-- fetching an asset from the server -->
+			<img xmp-image-asset="xmp.r['MainImage']"/>
+			<!-- fetching an asset from the site images folder, using the ADOR to determine the value -->
+			<img xmp-src="images/{{xmp.r['Image2']}}"/>
+		</div>
+	</div>
+	<div class="section">
+		<div class="section-title">Text File ADOR</div>
+		<div class="section-content">
+			<div xmp-text-asset="xmp.r['Introduction']"></div>
+		</div>
+	</div>
+	<div class="section">
+		<div class="section-title">Style ADOR</div>
+		<div class="section-content">
+			<div xmp-class="xmp.r['Theme']">what's up?</div>
+			<div class="{{xmp.r['Theme']}}">now with regular class</div>
+		</div>
+	</div>
+	<div class="section">
+		<div class="section-title">Visibility ADOR</div>
+		<div class="section-content">
+			<div xmp-show="xmp.r['IsStudent']">this text should be visible if isStudent is true</div>
+		</div>
+	</div>
+	<div class="section">
+		<div class="section-title">Link ADOR</div>
+		<div class="section-content">
+			<a xmp-href="{{xmp.r['Blog']}}" xmp-tracking-action='blog link clicked'>users blog</a>
+		</div>
+	</div>
+	<div class="section">
+		<div class="section-title">Table ADOR</div>
+		<div class="section-content">
+			<ul class="no-list repeater">
+				<li xmp-repeat="item in xmp.r['Courses']">
+					<span class="{{xmp.r['Theme']}}">{{item['Name']}}</span>
+					<span>{{item['Hours']}}</span>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<a ng-href="#/{{xmp.recipientID}}/edit">Edit</a>
+</div>

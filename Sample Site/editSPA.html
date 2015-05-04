@@ -1,0 +1,48 @@
+<div xmp-tracking-page-name="recipient update">
+	<div class="section">
+		<div class="section-title">{{xmp.r['First Name']}}'s update form</div>
+		<div class="section-content">
+			<img xmp-image-asset="xmp.r['MainImage']"/>
+		</div>
+	</div>
+	<div class="section">
+		<div class="section-title">Update form</div>
+		<div class="section-content">
+			<div>
+				Please fill some details 'ere:
+			</div>
+			<div>
+		      <form xmp-update xmp-success-url="#/{{xmp.recipientID}}" xmp-success-track-action="update">
+		      	<ul>
+		      		<li>
+		        		First Name : <input type="text" xmp-write-ador="xmp.r['First Name']"  size="30" xmp-tracking-action="first name edited">
+		        	</li>
+		        	<li>
+		        		Last Name : <input type="text" xmp-write-ador="xmp.r['Last Name']"  size="30" xmp-tracking-action="last name edited">
+		        	</li>
+		        </ul>
+        		<input class="btn-primary" type="submit" value="save with form redirect">
+        		<input class="btn-primary" type="submit" value="save with recirect and alert" xmp-success-url="#/{{xmp.recipientID}}" xmp-success-js="alert('edit success')">
+		      </form>				
+			</div>
+		</div>
+	</div>
+	<div class="section">
+		<div class="section-title">Another Update form</div>
+		<div class="section-content">
+			<div>
+				Now, just your email
+			</div>
+			<div>
+		      <form xmp-update xmp-success-url="#/{{xmp.recipientID}}" xmp-success-track-action="update">
+		      	<ul>
+		      		<li>
+		        		email : <input type="text" xmp-write-ador="xmp.r['Email']"  size="30" xmp-tracking-action="email edited">
+		        	</li>
+		        </ul>
+        		<input class="btn-primary" type="submit" value="save email">
+		      </form>				
+			</div>
+		</div>
+	</div>
+</div>

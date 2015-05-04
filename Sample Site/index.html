@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en" ng-app="xmp.app">
+<head>
+	<meta charset="utf-8">
+	<title>Sample Recipient Page</title>
+	<link href="./deps/xmp/css/xmp.css" rel="stylesheet" media="screen">
+	<link href="./css/main.css" rel="stylesheet" media="screen">
+</head>
+<body>
+	<div ng-controller="XMPPersonalizedPage"
+			xmp-tracking-page-name="landing page" 
+			xmp-cloak
+			>
+		<div class="section">
+			<div class="section-title">Text ADOR</div>
+			<div class="section-content">
+				<div>{{xmp.r['First Name']}}</div>
+				<div>hello {{xmp.r['First Name']}} {{xmp.r['Last Name']}}</div>
+			</div>
+		</div>
+		<div class="section">
+			<div class="section-title">Image ADOR</div>
+			<div class="section-content">
+				<!-- fetching an asset from the server -->
+				<img xmp-image-asset="xmp.r['MainImage']"/>
+				<!-- fetching an asset from the site images folder, using the ADOR to determine the value -->
+				<img xmp-src="images/{{xmp.r['Image2']}}"/>
+			</div>
+		</div>
+		<div class="section">
+			<div class="section-title">Text File ADOR</div>
+			<div class="section-content">
+				<div xmp-text-asset="xmp.r['Introduction']"></div>
+			</div>
+		</div>
+		<div class="section">
+			<div class="section-title">Style ADOR</div>
+			<div class="section-content">
+				<div xmp-class="xmp.r['Theme']">what's up?</div>
+				<div class="{{xmp.r['Theme']}}">now with regular class</div>
+			</div>
+		</div>
+		<div class="section">
+			<div class="section-title">Visibility ADOR</div>
+			<div class="section-content">
+				<div xmp-show="xmp.r['IsStudent']">this text should be visible if isStudent is true</div>
+			</div>
+		</div>
+		<div class="section">
+			<div class="section-title">Link ADOR</div>
+			<div class="section-content">
+				<a xmp-href="{{xmp.r['Blog']}}" xmp-tracking-action='blog link clicked'>users blog</a>
+			</div>
+		</div>
+		<div class="section">
+			<div class="section-title">Table ADOR</div>
+			<div class="section-content">
+				<ul class="no-list repeater">
+					<li xmp-repeat="item in xmp.r['Courses']">
+						<span class="{{xmp.r['Theme']}}">{{item['Name']}}</span>
+						<span>{{item['Hours']}}</span>
+					</li>
+				</ul>
+			</div>
+		</div>
+		<div class="section">
+			<div class="section-title">Social Media</div>
+
+			<div class="section-content">
+			<ul class="no-list">
+				<!-- 
+					the facebook examples require that the example site is hosted on a server
+					and that app id is registed with this domain. also - all shared urls have to be absolute urls
+				-->
+				<li>
+					<button type="button" class="btn xmp-facebook-share-btn" 
+					xmp-facebook-share
+					xmp-appID = "THE_APP_ID"
+					xmp-caption = "registration page"
+					xmp-name = "uCreate Digital Rocks"
+					xmp-description = "uCreate Digital is XMPie web tech"
+					xmp-target-link = "http://localhost:8080/register.html"
+					xmp-thumbnail = "http://localhost:8080/images/{{xmp.r['Image2']}}"
+					xmp-track='share on facebook'></button>
+					share on facebook with site asset
+				</li>
+				<li>
+					<xmp-facebook-share
+					xmp-appID = "THE_APP_ID"
+					xmp-caption = "registration page"
+					xmp-name = "uCreate Digital Rocks"
+					xmp-description = "uCreate Digital is XMPie web tech"
+					xmp-thumbnail-asset = "xmp.r['MainImage']"
+					xmp-target-link = "http://localhost:8080/register.html"
+					></xmp-facebook-share>
+					share on facebook with server asset
+				</li>
+				<li>
+					<a xmp-twitter-share 
+						xmp-url="http://www.pdfhummus.com/" 
+						xmp-shared-text="[attribute] I am {{ xmp.r['First Name']}} {{ xmp.r['Last Name']}}, and i approve this URL">Tweet</a>
+				</li>
+				<li>
+					<xmp-twitter-share 
+						xmp-url="http://www.pdfhummus.com/" 
+						xmp-shared-text="[element] I am {{ xmp.r['First Name']}} {{ xmp.r['Last Name']}}, and i approve this URL"/>
+				</li>
+			</div>
+		</div>
+		<xmp-update-on-page-load xmp-ador="xmp.r['Visited']" xmp-value="1"/>
+		<a href="update.html">Edit</a>
+		<a href="refer.html">Refer A Friend</a>
+	</div>
+
+
+  	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
+  	<script src="./deps/xmp/js/xmp.min.js"></script>
+	<script src="./xmpcfg.js"></script>
+</body>
+</html>

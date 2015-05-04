@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" ng-app="xmp.app">
+<head>
+	<meta charset="utf-8">
+	<title>Sample Refer Page</title>
+	<link href="./deps/xmp/css/xmp.css" rel="stylesheet" media="screen">
+	<link href="./css/main.css" rel="stylesheet" media="screen">
+</head>
+<body>
+	<div ng-controller="XMPPersonalizedPage">
+		<div class="section">
+			<div class="section-title">
+				Hi, {{xmp.r['First Name']}}. wanna recommend us to a friend?
+			</div>
+			<div class="section-content">
+				<img xmp-image-asset="xmp.r['MainImage']"/>
+			</div>
+		</div>
+		<div class="section">
+			<div class="section-title">Update form</div>
+			<div class="section-content">
+				<div>
+					Let us know about your friend:
+				</div>
+				<div>
+			      <form xmp-refer 
+			      		xmp-success-url="referThankYou.html">
+			      	<ul>
+			      		<li>
+			        		First Name : <input type="text" xmp-write-ador="xmp.referredRecipient['First Name']"  size="30">
+			        	</li>
+			        	<li>
+			        		Last Name : <input type="text" xmp-write-ador="xmp.referredRecipient['Last Name']"  size="30">
+			        	</li>
+			        	<li>
+			        		Email : <input type="text" xmp-write-ador="xmp.referredRecipient.Email"  size="30">
+			        	</li>
+			        </ul>
+	        		<input class="btn-primary" type="submit" value="save">
+			      </form>				
+				</div>
+			</div>
+		</div>
+	</div>
+
+  	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
+  	<script src="./deps/xmp/js/xmp.min.js"></script>
+	<script src="./xmpcfg.js"></script>
+</body>

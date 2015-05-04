@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en" ng-app="xmp.app">
+<head>
+	<meta charset="utf-8">
+	<title>Sample Refer thank you Page</title>
+	<link href="./deps/xmp/css/xmp.css" rel="stylesheet" media="screen">
+	<link href="./css/main.css" rel="stylesheet" media="screen">
+</head>
+<body>
+	<div ng-controller="XMPPersonalizedPage">
+		<div class="section">
+			<div class="section-title">
+				Thanks {{xmp.r['First Name']}}. we will be with {{xmp.referredRecipient['First Name']}} {{xmp.referredRecipient['Last Name']}} soon.
+				<br>
+				<a href="index.html">back home</a>
+			</div>
+		</div>
+	</div>
+
+  	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
+  	<script src="./deps/xmp/js/xmp.min.js"></script>
+	<script src="./xmpcfg.js"></script>
+</body>

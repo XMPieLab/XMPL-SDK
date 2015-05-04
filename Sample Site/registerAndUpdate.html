@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en" ng-app="xmp.app">
+<head>
+	<meta charset="utf-8">
+	<title>Sample Register to Update Page</title>
+	<link href="./deps/xmp/css/xmp.css" rel="stylesheet" media="screen">
+	<link href="./css/main.css" rel="stylesheet" media="screen">
+</head>
+<body>
+	<div ng-controller="XMPAnonymusPage">
+		
+		<div class="section" ng-show='!xmp.recipientID'>
+			<div class="section-title">
+				Welcome{{{true: (' ' + xmp.r['First Name']),false:'', }[xmp.r['First Name'].length > 0]}}! tell us a bit about yourself
+			</div>
+		</div>
+		<div class="section"  ng-show='!xmp.recipientID'>
+			<div class="section-title">Registration form</div>
+			<div class="section-content">
+				<div>
+					Please fill some details 'ere:
+				</div>
+				<div>
+			      <form xmp-register>
+			      	<ul>
+			      		<li>
+			        		First Name : <input type="text" xmp-write-ador="xmp.r['First Name']"  size="30">
+			        	</li>
+			        	<li>
+			        		Last Name : <input type="text" xmp-write-ador="xmp.r['Last Name']"  size="30">
+			        	</li>
+			        </ul>
+	        		<input class="btn-primary" type="submit" value="register">
+			      </form>				
+				</div>
+			</div>
+		</div>
+		<div class="section" ng-show='xmp.recipientID'>
+			<div class="section-title">{{xmp.r['First Name']}}'s update form</div>
+		</div>
+		<div class="section" ng-show='xmp.recipientID'>
+			<div class="section-content">
+				<div>
+					Please fill some details 'ere:
+				</div>
+				<div>
+			      <form xmp-update>
+			      	<ul>
+			      		<li>
+			        		First Name : <input type="text" xmp-write-ador="xmp.r['First Name']"  size="30">
+			        	</li>
+			        	<li>
+			        		Last Name : <input type="text" xmp-write-ador="xmp.r['Last Name']"  size="30">
+			        	</li>
+			        	<li>
+			        		Email : <input type="text" xmp-write-ador="xmp.r['Email']"  size="30">
+			        	</li>
+			        </ul>
+	        		<input class="btn-primary" type="submit" value="save">
+			      </form>				
+				</div>
+			</div>
+		</div>
+	</div>
+  	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
+  	<script src="./deps/xmp/js/xmp.min.js"></script>
+	<script src="./xmpcfg.js"></script>
+</body>

@@ -1,0 +1,28 @@
+<div xmp-tracking-page-name="registration">
+	<div class="section">
+		<div class="section-title">
+			Welcome! tell us a bit about yourself
+		</div>
+	</div>
+	<div class="section">
+		<div class="section-title">Registration form</div>
+		<div class="section-content">
+			<div>
+				Please fill some details 'ere:
+			</div>
+			<div>
+		      <form xmp-register xmp-success-url="#/{{xmp.recipientID}}">
+		      	<ul>
+		      		<li>
+		        		First Name : <input type="text" xmp-write-ador="xmp.r['First Name']"  size="30" xmp-tracking-action="first name edited">
+		        	</li>
+		        	<li>
+		        		Last Name : <input type="text" xmp-write-ador="xmp.r['Last Name']"  size="30" xmp-tracking-action="last name edited">
+		        	</li>
+		        </ul>
+        		<input class="btn-primary" type="submit" value="save" xmp-tracking-action>
+		      </form>						
+			</div>
+		</div>
+	</div>
+</div>

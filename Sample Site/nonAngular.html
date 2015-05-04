@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Sample Plain Javascript</title>
+	<link href="./deps/xmp/css/xmp.css" rel="stylesheet" media="screen">
+	<link href="./css/main.css" rel="stylesheet" media="screen">
+</head>
+<body>
+	<textarea id="txtArea" style="width:500px;height:500px"></textarea>
+
+  	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
+  	<script src="./deps/xmp/js/xmp.min.js"></script>
+	<script src="./xmpcfg.js"></script>
+
+	<script>
+
+
+	
+		// with login (true as 2nd param in constructor, and can use res.recipientID as later recipient ID, and no need to pass service token)
+
+	    var res = new xmpResourceDriver({configuration:xmpcfg},true,true);
+
+	    res.ready(function(){
+
+	    	res.getRecipientADORs(res.recipientID,null,function(data){$('#txtArea').val(JSON.stringify(data))});
+	    								
+
+	    });
+	
+
+	/*
+		call without RID deciphering, using Jane Jones ID 
+	*/
+    /*var res = new xmpResourceDriver({configuration:xmpcfg},true);
+
+    res.ready(function(){
+
+    	res.getRecipientADORs('Jane.Jones',null,function(data){$('#txtArea').val(JSON.stringify(data))});
+    								
+
+    });*/
+
+	</script>
+</body>
+</html>
