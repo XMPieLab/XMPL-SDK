@@ -7,4 +7,4 @@ The technology is built on top of AngularJS and is implemented entirely with cli
 
 The XMPie XMPL server is the server connecting your XMPie campaign with your webpages. The server defines a collection of REST services with which the XMPL library communicates, and makes available for the webpages in form of HTML tags and javascript. The SDK contains information also about the REST services API.
 
-For "Getting Started" instructions, guides and reference, go to https://github.com/XMPieLab/XMPL-sdk/wiki
+User guide and reference documentation can be found at https://github.com/XMPieLab/XMPL-sdk/wiki
