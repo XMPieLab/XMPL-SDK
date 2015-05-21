@@ -14,7 +14,7 @@ var xmpApp = angular.module('spaApp', [
       templateUrl:'editSPA.html'
     })
     .when('/register/', {
-      controller:'XMPAnonymusView',
+      controller:'XMPAnonymousView',
       templateUrl:'registerSPA.html'
     })
     .when('/:recipientID', {

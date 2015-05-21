@@ -1,5 +1,5 @@
 /* ==========================================================
-* xmp.css 1.0, build 28
+* xmp.css 1.0, build 34
 * ==========================================================
 * Copyright 2015 XMPie, LTD.
 * ========================================================== */
@@ -61,3 +61,14 @@ xmpResource.adorsToSetOnLoad,
 display: none !important;
 }
 
+
+.xmp-default-error-display
+{
+	background-color:white;
+	position:absolute;
+	top:0;
+	left:0;
+	z-index:1000;
+	width:100%;
+	height:100%;
+}
