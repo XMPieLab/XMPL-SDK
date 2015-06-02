@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" ng-app="xmp.app">
+<head>
+	<meta charset="utf-8">
+	<title>Sample Update Page with email sending</title>
+	<link href="./deps/xmp/css/xmp.css" rel="stylesheet" media="screen">
+	<link href="./css/main.css" rel="stylesheet" media="screen">
+</head>
+<body>
+	<div ng-controller="XMPPersonalizedPage" xmp-tracking-page-name="recipient update" xmp-no-caching>
+		<div class="section">
+			<div class="section-title">{{xmp.r['First Name']}}'s update form</div>
+			<div class="section-content">
+		      <form xmp-update xmp-success-triggered-email="update" xmp-success-url="index.html">
+		      	<ul>
+		      		<li>
+		        		First Name : <input type="text" xmp-write-ador="xmp.r['First Name']"  size="30">
+		        	</li>
+		        	<li>
+		        		Last Name : <input type="text" xmp-write-ador="xmp.r['Last Name']"  size="30">
+		        	</li>
+		        </ul>
+        		<input class="btn-primary" type="submit" value="save">
+		      </form>				
+			</div>
+		</div>
+
+		<xmp-email id="update"
+				xmp-touchpoint="E4"
+				xmp-subject="update for  {{xmp.recipientID}} successful"
+				xmp-to="admin@xmpie_service.com"
+		/>
+	</div>
+
+  	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
+  	<script src="./deps/xmp/js/xmp.min.js"></script>
+	<script src="./xmpcfg.js"></script>	
+</body>
