@@ -16,22 +16,8 @@
 			<div class="section-content">
 			<ul class="no-list">
 				<li>
-					<!-- default GUI, document 1 -->
-					<xmppdfondemand xmp-document-id ="1" xmp-button-title="Welcome"/>
-				</li>
-				<li>
-					<!-- default GUI, document 2 -->
-					<xmppdfondemand xmp-document-id ="2" xmp-button-title="Thank you!"/>
-				</li>
-				<li>
-					<!-- custom GUI -->
-					<xmppdfondemand xmp-document-id ="2">
-						<button type="button" class="btn" ng-click="generateDocument()" ng-disabled="status=='in progress'">Click Me</button> 
-						<span ng-show="status=='in progress'">waiting</span>
-						<a ng-show="status=='completed'" href="{{downloadURL}}" class="xmpDownloadResult">download</a>
-						<span ng-show="status=='failed'">{{errorMessage}}</span>
-					</xmppdfondemand>
-				</li>
+					<a xmp-href="{{xmp.r['XMPie.PDF.P1']}}">View PDF</a>
+				</li>				
 			</div>
 		</div>
 	</div>
