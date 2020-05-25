@@ -5,9 +5,12 @@
 	<title>Sample Registration Page</title>
 	<link href="./deps/xmp/css/xmp.css" rel="stylesheet" media="screen">
 	<link href="./css/main.css" rel="stylesheet" media="screen">
+	<script src="./xmpcfg.js" type="text/javascript"></script>
+	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
+	<script src="./deps/xmp/js/xmp.min.js"></script>
 </head>
-<body>
-	<div ng-controller="XMPAnonymousPage" xmp-tracking-page-name="registration">
+<body ng-controller="XMPAnonymousPage">
+	<div>
 		<div class="section">
 			<div class="section-title">
 				Welcome! tell us a bit about yourself
@@ -23,10 +26,10 @@
 			      <form xmp-register xmp-success-url="index.html">
 			      	<ul>
 			      		<li>
-			        		First Name : <input type="text" xmp-write-ador="xmp.r['First Name']"  size="30" xmp-tracking-action="first name edited">
+			        		First Name : <input type="text" xmp-write-ador="xmp.r['firstName']"  size="30" xmp-tracking-action="first name edited">
 			        	</li>
 			        	<li>
-			        		Last Name : <input type="text" xmp-write-ador="xmp.r['Last Name']"  size="30" xmp-tracking-action="last name edited">
+			        		Last Name : <input type="text" xmp-write-ador="xmp.r['lastName']"  size="30" xmp-tracking-action="last name edited">
 			        	</li>
 			        </ul>
 	        		<input class="btn-primary" type="submit" value="save" xmp-tracking-action>
@@ -35,8 +38,4 @@
 			</div>
 		</div>
 	</div>
-
-  	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
-  	<script src="./deps/xmp/js/xmp.min.js"></script>
-	<script src="./xmpcfg.js"></script>
 </body>

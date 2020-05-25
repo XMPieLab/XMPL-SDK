@@ -5,14 +5,17 @@
 	<title>Sample PDF On demand page</title>
 	<link href="./deps/xmp/css/xmp.css" rel="stylesheet" media="screen">
 	<link href="./css/main.css" rel="stylesheet" media="screen">
+	<script src="./xmpcfg.js" type="text/javascript"></script>
+	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
+	<script src="./deps/xmp/js/xmp.min.js"></script>
 </head>
-<body>
-	<div ng-controller="XMPPersonalizedPage"
+<body ng-controller="XMPPersonalizedPage">
+	<div 
 			xmp-tracking-page-name="pdf on demand page" 
 			xmp-cloak
 			>
 		<div class="section">
-			<div class="section-title">Sample PDF creation for {{xmp.r['First Name']}} {{xmp.r['Last Name']}}</div>
+			<div class="section-title">Sample PDF creation for {{xmp.r['firstName']}} {{xmp.r['lastName']}}</div>
 			<div class="section-content">
 			<ul class="no-list">
 				<li>
@@ -21,8 +24,5 @@
 			</div>
 		</div>
 	</div>
-  	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
-  	<script src="./deps/xmp/js/xmp.min.js"></script>
-	<script src="./xmpcfg.js"></script>
 </body>
 </html>		
