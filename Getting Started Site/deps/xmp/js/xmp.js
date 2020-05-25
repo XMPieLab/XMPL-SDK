@@ -1,9 +1,65 @@
+/* ==========================================================
+* xmp.js 3.1.3, build 438
+* ==========================================================
+* Copyright 2019 XMPie, LTD.
+* ========================================================== */
+
+var muCreateXMVersion = "3.1.3";
+var muCreateXMBuild = 438;
+
+
+//Because we place all block in $(document).ready function we needed to expose these global variables outside xmpControllerDriver, xmpResourceDriver
+var xmpControllerDriver;
+var xmpResourceDriver;
+
+
+function waitForScriptLoad(attemptNumber) {
+  if (attemptNumber > 5)
+  {
+    console.log('jQuery couldnt be found, please add the script to your html file');
+    return;
+  }
+  attemptNumber++;
+  if (typeof jQuery == 'undefined')
+  {
+    console.log('Attempt number ' + attemptNumber + ': jQuery couldnt be found, try again in 1 second');
+    setTimeout(function() {waitForScriptLoad(attemptNumber)},1000);
+  }
+  else
+  {
+    console.log('jQuery was found, start XMPL app');
+    loadXmplGeneralScript();
+  }
+
+}
+
+
+function loadXmplGeneralScript()
+{
+
+  $(document).ready(function()
+  {
+    if (typeof jQuery != 'undefined')
+    {
+      console.log('jQuery version: ' + jQuery.fn.jquery);
+
+      // Min jQuery Version 1.10.2
+      var jQueryVersion = jQuery.fn.jquery.split('.');
+      if (!(
+        Number(jQueryVersion[0]) > 1 ||
+        Number(jQueryVersion[0]) === 1 && (
+          Number(jQueryVersion[1]) > 10 || Number(jQueryVersion[1]) === 10 && Number(jQueryVersion[2]) >= 2
+        )
+      )) {
+        console.log('Please note jQuery version ' + jQuery.fn.jquery + ' is not supported for this XMPL version');
+      }
+    }
 /**
  * @license AngularJS v1.3.0-beta.3
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
-(function(window, document, undefined) {
+(function(window, document, undefined) {'use strict';
 
 /**
  * @description
@@ -22042,6 +22098,21 @@ xmpDirectives.directive('xmpRepeat', ['$compile','xmpResource',function($compile
 );
 
 
+function isolateSuccessFailureProperties($scope)
+{
+	$scope.failureTrackAction = null;
+	$scope.failureJSAction = null;
+	$scope.failureNGAction = null;
+	$scope.failureNGAction = null;
+	$scope.failureURL = null;
+	$scope.successEmail = null;
+	$scope.successTrackAction = null;
+	$scope.successJSAction = null;
+	$scope.successNGAction = null;
+	$scope.successURL = null;
+
+}
+
 /*
 	update form directive. used for designating a form that updates the recipient data. Mostly relying on existing ng-submit and ng-model with addition
 	of declaring the variables for update on the main controller for getting (via the resource)
@@ -22052,7 +22123,7 @@ xmpDirectives.directive('xmpUpdate', ['$compile','xmpResource',function($compile
 		      restrict: 'A',
 		      terminal: true, //this setting is important, see explanation below 
 		      priority: 999, //this setting is important, see explanation below
-			  scope:true,
+			  scope:true, 
 		      compile: function(element, attrs) {
 		      	xmpResource.declareRecipientADORsInJQueryElement(element);
 
@@ -22067,7 +22138,8 @@ xmpDirectives.directive('xmpUpdate', ['$compile','xmpResource',function($compile
 		          }
 		        };
 		      },
-      		  controller: function($scope, $element) {		
+      		  controller: function($scope, $element) {
+      		  		isolateSuccessFailureProperties($scope);		
       		  		// use main controller defined	update Adors method to implement
 
       		  		$scope.updateAdors = function(){$scope.updateAdorsForFields($scope.defaultAdorsForSet,$scope)};
@@ -22102,8 +22174,27 @@ xmpDirectives.directive('xmpRegister', ['$compile','xmpResource',function($compi
 		        };
 		      },
       		  controller: function($scope, $element) {		
+      		  		isolateSuccessFailureProperties($scope);
+                $scope.hasAutoSignIn =  !!$element.attr('xmp-signin-auto');
       		  		$scope.addRecipient = function(){
-      		  			$scope.addRecipientForFields($scope.defaultAdorsForSet,$scope)
+
+						//Confirm Password:
+						var passwordElement = $element.find('[xmp-password]')[0]
+						var confirmPasswordElement = $element.find('[xmp-confirm-password]')[0]
+
+						if (confirmPasswordElement && passwordElement) {
+							var passwordText = passwordElement.value.trim()
+							var confirmPasswordText = confirmPasswordElement.value.trim()
+
+							if (confirmPasswordText !== passwordText) {
+								$(confirmPasswordElement).addClass('xmp-confirm-error');
+								if (confirmPasswordElement.getAttribute('xmp-failure-js'))
+									eval(confirmPasswordElement.getAttribute('xmp-failure-js'));
+								return;
+							}
+						}
+
+						$scope.addRecipientForFields($scope.defaultAdorsForSet,$scope);
       		  		};
       		  }
 		 }
@@ -22156,6 +22247,8 @@ xmpDirectives.directive('xmpRefer', ['$compile','xmpResource',function($compile,
 		        };
 		      },
       		  controller: function($scope, $element) {		
+      		  		isolateSuccessFailureProperties($scope);		
+
       		  		// use main controller defined	addReferredRecipientForFields with Adors method to implement
       		  		$scope.resetXMP = function()
       		  		{
@@ -22167,12 +22260,35 @@ xmpDirectives.directive('xmpRefer', ['$compile','xmpResource',function($compile,
 						        }
 						      }	
 						this.xmp = xmpCopy;		          	
-			          	this.xmp.referredRecipient = {};      		  			
+			          	this.xmp.referredRecipient = {};
+						var referReci = this.xmp.referredRecipient = {};
+						//Here we check for default values in ADORS and place it inside the xmp.referredRecipient object
+						//Because of the resetXMP, this operation has to be done here and not in personalizedViewController as with formDefaultAdors dictionary
+						if (this.$parent.formDefaultReferredAdors)
+							$.each(this.$parent.formDefaultReferredAdors,function(key, value) {
+								referReci[key] = value;
+							});
       		  		}
       		  		$scope.addReferredRecipient = function(){
 
-      		  				$scope.addReferredRecipientForFields($scope.defaultAdorsForReferredAdd,$scope,Object.keys($scope.referDict));
-      		  			};
+						//Confirm Password:
+						var passwordElement = $element.find('[xmp-password]')[0]
+						var confirmPasswordElement = $element.find('[xmp-confirm-password]')[0]
+
+						if (confirmPasswordElement && passwordElement) {
+							var passwordText = passwordElement.value.trim()
+							var confirmPasswordText = confirmPasswordElement.value.trim()
+
+							if (confirmPasswordText !== passwordText) {
+								$(confirmPasswordElement).addClass('xmp-confirm-error');
+								if (confirmPasswordElement.getAttribute('xmp-failure-js'))
+									eval(confirmPasswordElement.getAttribute('xmp-failure-js'));
+								return;
+							}
+						}
+
+						$scope.addReferredRecipientForFields($scope.defaultAdorsForReferredAdd,$scope,Object.keys($scope.referDict));
+					};
       		  }
 		 }
 	}]
@@ -22409,6 +22525,38 @@ xmpDirectives.directive('xmpFailureNg', function()
 	}
 );
 
+xmpDirectives.directive('xmpTrueValue' , ['$compile',function($compile)
+		{
+			return {
+				restrict: 'A',
+				terminal: true, //this setting is important, see explanation below
+				priority: 1000, //this setting is important, see explanation below
+				compile: function(inElement,inAttributes,inTransclude) {
+					var trueVal = inAttributes['xmpTrueValue'];
+					inElement.attr('ng-true-value', trueVal);
+					inElement.removeAttr('xmp-true-value'); //remove the attribute to avoid indefinite loop
+					inElement.removeAttr('data-xmp-true-value'); //also remove the same attribute with data- prefix in case users specify data-common-things in the html
+				}
+			}
+		}]
+);
+
+
+xmpDirectives.directive('xmpFalseValue' , ['$compile',function($compile)
+		{
+			return {
+				restrict: 'A',
+				terminal: true, //this setting is important, see explanation below
+				priority: 1000, //this setting is important, see explanation below
+				compile: function(inElement,inAttributes,inTransclude) {
+					var falseVal = inAttributes['xmpFalseValue'];
+					inElement.attr('ng-false-value', falseVal);
+					inElement.removeAttr('xmp-false-value'); //remove the attribute to avoid indefinite loop
+					inElement.removeAttr('data-xmp-false-value'); //also remove the same attribute with data- prefix in case users specify data-common-things in the html
+				}
+			}
+		}]
+);
 /*
 	xmpWriteAdor is used in the context of a form that has xmpUpdate, xmpRegister or one that has xmpRefer, to designate a field that is mapped
 	to an ADOR. it both gets its value, and will save to it once the form is saved.
@@ -22429,6 +22577,13 @@ xmpDirectives.directive('xmpWriteAdor', ['$compile','xmpResource',function($comp
 		        inElement.removeAttr("xmp-write-ador"); //remove the attribute to avoid indefinite loop
 		        inElement.removeAttr("data-xmp-write-ador"); //also remove the same attribute with data- prefix in case users specify data-common-things in the html
 
+				// This code check for xmpDefaultValue attribute, if it's exist the requested value is saved in order to set it in the appropiate ADOR
+				var adorDefaultValue = inAttributes['xmpDefaultValue'];
+				if (adorDefaultValue) {
+					inElement.removeAttr("xmp-default-value");
+					inElement.removeAttr("data-xmp-default-value");
+				}
+
 		        return {
 		          pre: function(scope, iElement, iAttrs, controller) {  },
 		          post: function(scope, iElement, iAttrs, controller) {  
@@ -22439,12 +22594,24 @@ xmpDirectives.directive('xmpWriteAdor', ['$compile','xmpResource',function($comp
       					if(!scope.defaultAdorsForReferredAdd)
       						scope.defaultAdorsForReferredAdd = {};
 
-      					xmpResource.populateRecipientADORsInExpression(ador,scope.defaultAdorsForSet,scope.defaultAdorsForReferredAdd);
+					  //prepare 2 dictionaries formDefaultAdors,formDefaultReferredAdors-> for xmp-default-value which can be used in update/register form or referal form
+					  if (!scope.$parent.formDefaultAdors)
+						  scope.$parent.formDefaultAdors= {};
+					  if (!scope.$parent.formDefaultReferredAdors)
+						  scope.$parent.formDefaultReferredAdors= {};
+					  //check if adorDefaultValue is exist, if it does then we prepar dictionaries with ADORs and its optional default value
+					  //later we'll use these dictionaries in order to set default values into ADORS.
+					  // * formDefaultAdors is being used in personalizedViewController (xmp-update) and anonymousViewController (xmp-register)
+					  // * formDefaultReferredAdors is being used in xmp-Refer
+					  if (adorDefaultValue)
+						  xmpResource.populateRecipientADORsInExpression(ador, scope.$parent.formDefaultAdors, scope.$parent.formDefaultReferredAdors,false,false,adorDefaultValue);
+
+					  xmpResource.populateRecipientADORsInExpression(ador,scope.defaultAdorsForSet,scope.defaultAdorsForReferredAdd);
       					if(iAttrs['value'] !== undefined)
       						scope.xmpReady(function(){
-                    	iElement.controller('ngModel').$setViewValue(iElement.val())
-                  });
-
+								if (iAttrs.type != 'radio')
+                    				iElement.controller('ngModel').$setViewValue(iElement.val())
+							});
 		          }
 		        };
 		      }
@@ -22672,7 +22839,7 @@ function getHTMLEventForTrackingForElement(inJElement)
                         break;
                 }
             }
-            result = isclick ? "click" : "change";
+            result = isclick ? "mousedown" : "change";
             break;
         } 
         case "select":
@@ -22680,7 +22847,7 @@ function getHTMLEventForTrackingForElement(inJElement)
         	result = "change"; 
         	break;
         default: 
-        	result = "click";
+        	result = "mousedown";
     }
 	return result;
 }
@@ -23258,19 +23425,19 @@ xmpDirectives.directive('xmpEmail',['xmpResource',function(xmpResource)
 	sets the status. the parameters controlling subscription are passed via the URL of teh web page
 	and their description is out of scope of this library, but rather an internal XMPie method
 */
-xmpDirectives.directive('xmpUnsubscribe',['xmpResource',function(xmpResource)
-{
-		return {
-		      restrict: 'A',
-		      link: function(scope, inElement, iAttrs, controller) {
+xmpDirectives.directive('xmpUnsubscribe',['xmpResource','$parse','$location',function(xmpResource,$parse,$location)
+		{
+			return {
+				restrict: 'A',
+				link: function(scope, inElement, iAttrs, controller) {
 					inElement.on('click.xmpUnsubscribe',function(){
 						// recipient ID will be derived from parent controller
-			      		xmpResource.changeUnsubscribeStatus(scope.xmp.recipientID,iAttrs['xmpUnsubscribe'] != 'false' ? true:false);
+						xmpResource.changeUnsubscribeStatus(scope,$parse,$location,iAttrs,scope.xmp.recipientID,iAttrs['xmpUnsubscribe'] != 'false' ? true:false);
 					});
 
-		      }
-		 };
-}]
+				}
+			};
+		}]
 );
 
 /*
@@ -23362,15 +23529,122 @@ xmpDirectives.directive('xmpClickedTriggeredEmail', ['xmpResource',function(xmpR
 					    });	
 
 					    // now send the email!
-					    scope.sendEmailToRecipient(successEmail);
+					    scope.sendEmailorTriggerToRecipient(successEmail);
 
 					});
 			    };
 		      }
 		}
 	}]
-
 );
+
+xmpDirectives.directive('xmpClickedTrigger', ['xmpResource',function(xmpResource)
+	{
+		return {
+			restrict: 'A',
+			compile: function(element, attrs) {
+				xmpResource.declareRecipientADORsInAttributes(attrs);
+
+				return  function(scope, iElement, iAttrs, controller)
+				{
+					iElement.on('click.xmpClickedTrigger',function()
+					{
+						var successEmail = {id:iAttrs['xmpClickedTrigger'],
+							customizations:{}};
+
+						[
+							'xmpSubject',
+							'xmpFrom',
+							'xmpFromName',
+							'xmpReplyTo',
+							'xmpTo',
+							'xmpToName',
+							'xmpCc',
+							'xmpCcName',
+							'xmpBcc',
+							'xmpBccName'
+						].forEach(function(inElement)
+						{
+							successEmail.customizations[inElement] = iAttrs[inElement];
+						});
+
+						// now send the email!
+						scope.sendEmailorTriggerToRecipient(successEmail);
+
+					});
+				};
+			}
+		}
+	}]
+);
+
+
+xmpDirectives.directive('xmpSuccessTrigger', ['xmpResource',function(xmpResource)
+	{
+		return {
+			restrict: 'A',
+			priority: 1000, // so it comes before the form gets evaluated
+			compile: function(element, attrs) {
+				xmpResource.declareRecipientADORsInAttributes(attrs);
+
+				return  function(scope, iElement, iAttrs, controller)
+				{
+
+					if(isActionContainer(iElement,iAttrs))
+					{
+						scope.successEmailTrigger = {id:iAttrs['xmpSuccessTrigger'],
+							customizations:{}};
+
+						[
+							'xmpSubject',
+							'xmpFrom',
+							'xmpFromName',
+							'xmpReplyTo',
+							'xmpTo',
+							'xmpToName',
+							'xmpCc',
+							'xmpCcName',
+							'xmpBcc',
+							'xmpBccName'
+						].forEach(function(inElement)
+						{
+							iAttrs.$observe(inElement, function(value) {
+								if (!value)
+									return;
+								scope.successEmailTrigger.customizations[inElement] = value;
+							});
+						});
+					}
+					else
+					{
+						iElement.on('click.xmpSuccessTrigger',function()
+						{
+							scope.successEmailTrigger = {id:iAttrs['xmpSuccessTrigger'],
+								customizations:{}};
+
+							[
+								'xmpSubject',
+								'xmpFrom',
+								'xmpFromName',
+								'xmpReplyTo',
+								'xmpTo',
+								'xmpToName',
+								'xmpCc',
+								'xmpCcName',
+								'xmpBcc',
+								'xmpBccName'
+							].forEach(function(inElement)
+							{
+								scope.successEmailTrigger.customizations[inElement] = iAttrs[inElement];
+							});
+						});
+					}
+				};
+			}
+		}
+	}]
+);
+
 
 function getRecipientADORName(xmpResource,inExpression)
 {
@@ -23523,10 +23797,8 @@ xmpDirectives.directive('xmpDefaultErrorNode',[function()
 		return {
 			restrict: 'C',
 			template:   '<div ng-if="xmp.errorReason" class="xmp-default-error-display">' +
-						'<h1>XMPL error</h1>' + 
-						'<p>An error occurred while performing a call to XMPL Server. <br />' +
-						'This is a generic view that appears during such errors, providing details about the error. <br />' + 
-						'If you want it not to appear in case of error add the attribute <code>xmp-turn-off-default-error</code> to the element containing the <code>ng-controller</code> attribute.   </p>' +
+						'<h1>XMPL error {{hide111}}</h1>' +
+						'<p style="color: red;font-size: 18px;">{{xmp.errorReason.data.DisplayMessage.length > 0 ? xmp.errorReason.data.DisplayMessage : xmp.errorReason.data.ExceptionMessage}}</p>' +
 						'<h2>Error details</h2>' +
 						'<p>{{specificErrorDetails(xmp.errorReason)}}</p>' +
 						'<h2>HTTP error data</h2>' +
@@ -23534,21 +23806,24 @@ xmpDirectives.directive('xmpDefaultErrorNode',[function()
 						'<ul>' +
 						'<li><strong>url:</strong> {{xmp.errorReason.config.url}}</li>' +
 						'<li ng-show="xmp.errorReason.config.params"><strong>query string parameters:</strong>' +
-						'<code>' +
-						'{{xmp.errorReason.config.params}}' +
-						'</code></li>' +
+						'<pre>' +
+						'{{(xmp.errorReason.config.params)}}' +
+						'</pre></li>' +
 						'<li ng-show="xmp.errorReason.config.data"><strong>body:</strong> ' +
 						'<code>' +
-						'{{xmp.errorReason.config.data}}' +
+						'{{(xmp.errorReason.config.data)}}' +
 						'</code></li>' +
 						'</ul>' +
 						'<h3>Result:</h3>' +
 						'<ul>' +
 						'<li><strong>status:</strong> {{xmp.errorReason.status}}</li>' +
-						'<li><strong>data:</strong> {{xmp.errorReason.data}}</li>' +
+						'<li><strong>data:</strong> {{(xmp.errorReason.data)}}</li>' +
 						'</ul>' +
 						'<h2>HTTP object</h2>' +
-						'<p>{{xmp.errorReason}}</p>' +
+						'<p>{{(xmp.errorReason)}}</p>' +
+						'<p style="border: 1px solid black; width: 960px; padding: 5px;">An error occurred while performing a call to XMPL Server. <br />' +
+						'This is a generic view that appears during such errors, providing details about the error. <br />' +
+						'If you want it not to appear in case of error add the attribute <code>xmp-turn-off-default-error</code> to the element containing the <code>ng-controller</code> attribute.   </p>' +
 						'</div>',
 			link: function($scope, $element, inAttributes)
 			{
@@ -23571,6 +23846,140 @@ xmpDirectives.directive('xmpDefaultErrorNode',[function()
 		};
 	}]
 );
+
+/**
+ * This directive adds a flag to the scope to signal the XMPAnonymousPage controller when
+ * to permanently save the cookie.
+ */
+xmpDirectives.directive('xmpRememberRecipient', [function(){
+    return {
+        restrict: 'A',
+        link: function(scope, element, attr) {
+            if (attr.ngController && attr.ngController == 'XMPAnonymousPage') {
+                scope.xmp.shouldRememberRecipient = true;
+            }
+        }
+    };
+}]);
+
+
+/**
+ * This directive creates login form and allows the recipient to login to log in for a site that has
+ * SecURL set on the site. The directive should be added to a form html element with a submit button.
+ * The submit button will respond to xmp-success-url.
+ * Note: The component should work be inside a XMPPersonalizedPage controller.
+ */
+
+xmpDirectives.directive('xmpSignin', ['$compile','xmpResource', '$location', function($compile,xmpResource, $location)
+  {
+    return {
+      restrict: 'A',
+      terminal: true, //this setting is important, see explanation below
+      priority: 999, //this setting is important, see explanation below
+      scope:true,
+      compile: function(element, attrs) {
+
+        xmpResource.declareRecipientADORsInJQueryElement(element);
+
+        element.attr('ng-submit', 'submitLogin()');
+        element.removeAttr("xmp-signin"); //remove the attribute to avoid indefinite loop
+        element.removeAttr("data-xmp-signin"); //also remove the same attribute with data- prefix in case users specify data-common-things in the html
+				var username = element.find('[xmp-username]')
+				if (username)  {
+					username.attr('ng-model', 'username')
+				} else {
+					console.error('missing xmp-username directive inside xmp-signin')
+				}
+				var password = element.find('[xmp-password]')
+				if (password) {
+          password.attr('ng-model', 'password')
+				} else {
+          console.error('missing xmp-password directive inside xmp-signin')
+				}
+
+
+
+        return {
+          pre: function (scope, iElement, iAttrs, controller) {  },
+          post: function (scope, iElement, iAttrs, controller) {
+          	scope.username =''
+						scope.password=''
+            $compile(iElement)(scope);
+          }
+        };
+      },
+      controller: function($scope, $element) {
+        isolateSuccessFailureProperties($scope);
+        var failureAttrElement = $element.find('[xmp-signin-status-class]')
+
+        window.xmpSigninOnPage = 1
+        $scope.submitLogin = function(){
+        	xmpResource.signin($scope.xmp.recipientID, $scope.username, $scope.password, $scope.successURL,  $scope.failureJSAction, failureAttrElement, $location, $scope)
+        }
+      }
+    }
+  }]
+);
+
+
+/**
+ * This directive create a logout button functionality it can be applied to a button or a link
+ * Note: The component should work be inside a XMPPersonalizedPage controller.
+ */
+xmpDirectives.directive('xmpSignout', ['$compile','xmpResource','$location', function($compile,xmpResource, $location)
+  {
+    return {
+      restrict: 'A',
+      terminal: true, //this setting is important, see explanation below
+      priority: 999, //this setting is important, see explanation below
+      scope:true,
+      compile: function(element, attrs) {
+
+        xmpResource.declareRecipientADORsInJQueryElement(element);
+
+        element.attr('ng-click', 'submitLogout()');
+        element.removeAttr("xmp-signout"); //remove the attribute to avoid indefinite loop
+        element.removeAttr("data-xmp-signout"); //also remove the same attribute with data- prefix in case users specify data-common-things in the html
+
+        return {
+          pre: function (scope, iElement, iAttrs, controller) {  },
+          post: function (scope, iElement, iAttrs, controller) {
+            $compile(iElement)(scope);
+          }
+        };
+      },
+      controller: function($scope, $element) {
+        isolateSuccessFailureProperties($scope);
+        $scope.submitLogout = function(){
+          xmpResource.signOut($scope.xmp.recipientID, $scope.successURL || $element.attr('xmp-success-url'), $location, $scope);
+        }
+      }
+    }
+  }]
+);
+
+xmpDirectives.directive('xmpClear',  function()
+  {
+    return {
+      restrict: 'A',
+      terminal: true, //this setting is important, see explanation below
+      priority: 999, //this setting is important, see explanation below
+      scope:true,
+     	link: function(scope, element) {
+				element.click(function(){
+          deleteAllXmpCookies();
+				});
+			}
+    }
+  }
+);
+var deleteAllXmpCookies =function () {
+  deleteCookie('xmpSecurityToken');
+  deleteCookie('xmpRecipientID');
+  deleteCookie('xmpServiceToken');
+  deleteCookie('xmpReferredID');
+}
+;
 
 var xmpControllers = angular.module('xmp.controllers', ['ngCookies'])
 
@@ -23688,6 +24097,14 @@ function personalizedViewController($scope,
             var resultAnalysis = analyzeGetADORSResponse(result.result,'r');
             $scope.xmp.r = result.result;
             setupLoadStatus($scope.xmp,'r',resultAnalysis.readyADORs,eADORsLoaded);
+
+            //Here we check for default values in ADORS and place it inside the xmp.r object for xmp-update form
+            if ($scope.formDefaultAdors)
+               $.each($scope.formDefaultAdors,function(key, value) {
+                   if ($scope.xmp.r[key]!= undefined && ($scope.xmp.r[key] == "" || $scope.xmp.r[key] == null))
+                          $scope.xmp.r[key] = value;
+               });
+
             $scope.trackAsyncJobs(resultAnalysis.asyncJobs); 
           }
           else
@@ -23701,8 +24118,8 @@ function personalizedViewController($scope,
           recipientReady($scope);
 
           // save in cookies
-          $cookies.xmpServiceToken = xmpResource.access.serviceToken;
-          $cookies.xmpRecipientID = $scope.xmp.recipientID;
+          setCookie('xmpServiceToken', xmpResource.access.serviceToken, 9999);
+          setCookie('xmpRecipientID', $scope.xmp.recipientID, 9999);
 
           // setup referred recipient data
           referredRecipientSetup($scope,$location,$cookies,xmpResource);
@@ -23743,6 +24160,33 @@ function createDefaultErrorNode($element,$compile,$scope)
   $element.append($newNode);
   $compile($newNode)($scope);
 }
+
+/**
+ * Sets a cookie value - because $cookies.xmpRecipientID = X has issues in IE
+ * (they are saved as session cookie in NG 1.3 - If you change virtual folders in IE you get the same cookie)
+ * You can still read cookies from $cookies.xmpRecipientID
+ * @param cname The name of the key on the cookie
+ * @param cvalue The value to save
+ * @param exdays Number of days for cookie to expire.
+ */
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+d.toUTCString();
+    document.cookie = cname + "=" + cvalue + "; " + expires;
+}
+
+//Get cookie
+function getCookie(name) {
+  var value = "; " + document.cookie;
+  var parts = value.split("; " + name + "=");
+  if (parts.length == 2) return parts.pop().split(";").shift();
+}
+
+//Delete cookie
+var deleteCookie = function(name) {
+  document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+};
 
 xmpControllers.controller('XMPPersonalizedPage', ['$scope',
                                                 '$element',
@@ -23878,10 +24322,17 @@ function onRecipientSubmitSuccess($window, $location, $parse,xmpResource, scope,
         if (inPostActionParameters.successEmail)
         {
             xmpResource.debug('onRecipientSubmitSuccess: sending success email');
-            sendEmail(xmpResource, inPostActionParameters.successEmail, inEmailRecipientID ? inEmailRecipientID:scope.xmp.recipientID, inPostActionParameters.successURL);
+            sendEmailorTrigger(xmpResource,scope, inPostActionParameters.successEmail, inEmailRecipientID ? inEmailRecipientID:scope.xmp.recipientID, inPostActionParameters.successURL);
         }
 
-        if (inPostActionParameters.successTrackAction)
+      if (inPostActionParameters.successEmailTrigger)
+      {
+        xmpResource.debug('onRecipientSubmitSuccess: sending success trigger email');
+        sendEmailorTrigger(xmpResource,scope, inPostActionParameters.successEmailTrigger, inEmailRecipientID ? inEmailRecipientID:scope.xmp.recipientID, inPostActionParameters.successURL);
+      }
+
+
+      if (inPostActionParameters.successTrackAction)
         {
             xmpResource.debug('onRecipientSubmitSuccess: tracking on success');
             trackSimpleAction(scope, xmpResource, inPostActionParameters.successTrackAction, inPostActionParameters.successURL);
@@ -23941,7 +24392,7 @@ function setupLoadStatus(inXMPObject,inMember,inAdorsList,inStatus)
     inXMPObject.status.adorfailure = true;
 }
 
-function sendEmail(xmpResource,inEmailReference,inRecipientID,inSync)
+function sendEmailorTrigger(xmpResource,scope,inEmailReference,inRecipientID,inSync)
 {
   inEmailReference.id.split(',').forEach(function(inEmailID)
   {
@@ -23959,15 +24410,17 @@ function sendEmail(xmpResource,inEmailReference,inRecipientID,inSync)
       customizations = inEmailReference.customizations;
     }
 
-    xmpResource.debug('sendEmail: sending email. touchpoint ID = ',touchpointID,'customizations = ',customizations);
+    xmpResource.debug('sendEmailorTrigger: sending email. touchpoint ID = ',touchpointID,'customizations = ',customizations);
 
-    xmpResource.sendEmail(
+    xmpResource.sendEmailorTrigger(
         touchpointID,
         {
           sync:inSync, 
           recipientID:inRecipientID,
           customizations:customizations
-        });
+        },
+        null,
+        function(reason){scope.transitToFailureView(reason)});
    });
 }
 
@@ -24225,6 +24678,9 @@ $scope.xmpReady = function(cb)
   */
   $scope.transitToFailureView = function(reason)
   {
+    if (typeof $('body').attr('xmp-prevent-default-error-handle') !== 'undefined') {
+      return;
+    }
     xmpResource.debug('running default transition to error view',reason);
     $scope.xmp.errorReason = reason;
   }
@@ -24283,16 +24739,24 @@ $scope.xmpReady = function(cb)
     }
   }
 
-
-  // add common methods to scope
-  $scope.sendEmailToRecipient = function(inEmailReference)
-  {
-    sendEmail(xmpResource, inEmailReference, $scope.xmp.recipientID);          
+  $scope.submitSign = function(useername, password) {
+    xmpResource.signin($scope.xmp.recipientID, useername, password)
   }
 
-  $scope.sendEmailToReferredRecipient = function(inEmailReference)
+  $scope.submitSignOut = function() {
+    xmpResource.signOut($scope.xmp.recipientID)
+  }
+
+
+  // add common methods to scope
+  $scope.sendEmailorTriggerToRecipient = function(inEmailReference)
   {
-    sendEmail(xmpResource, inEmailReference, $scope.xmp.referredID);          
+    sendEmailorTrigger(xmpResource,$scope,inEmailReference, $scope.xmp.recipientID);
+  }
+
+  $scope.sendEmailorTriggerToReferredRecipient = function(inEmailReference)
+  {
+    sendEmailorTrigger(xmpResource,$scope, inEmailReference, $scope.xmp.referredID);
   }
 
 
@@ -24557,7 +25021,63 @@ commonControllersSetup($scope,
   $scope.xmp.recipientID = null; // just for the sake of clear declaration really
   $scope.xmp.r = {};
 
-  // login, so it is possible to run services [not passing cached recipient ID to make a point that this is anonymous]
+  //call this method to set the recipient
+  $scope.setRecipientID = function(inRecipientID)
+  {
+        // get ADORs, per the collected controller adors
+        var defaultADORs = Object.keys($scope.defaultAdorsForGet);
+
+        //if no ADOR to load
+        if(defaultADORs.length == 0)
+            return;
+
+        //update the load status for the recipients
+        setupLoadStatus($scope.xmp,'r',defaultADORs,eADORsLoading);
+        xmpResource.getRecipientADORs(inRecipientID,
+            {
+                adors:defaultADORs,
+                resolved:Object.keys($scope.defaultAdorsForResolve)
+            }).$promise.then(
+
+            function(result)
+            {
+                $scope.xmp.recipientID = inRecipientID;
+
+                var resultAnalysis = analyzeGetADORSResponse(result,'r');
+                $scope.xmp.r = result;
+                setupLoadStatus($scope.xmp,'r',resultAnalysis.readyADORs,eADORsLoaded);
+                $scope.trackAsyncJobs(resultAnalysis.asyncJobs);
+
+
+                // save in cookies
+                setCookie('xmpRecipientID', $scope.xmp.recipientID, 9999);
+
+
+            },
+            function(reason)
+            {
+                setupLoadStatus($scope.xmp,'r',defaultADORs,eADORsFailed);
+            }
+        );
+
+    };
+
+  //force recipient cookie write
+  $scope.rememberRecipient = function(){
+      if ($cookies.xmpRecipientID && $cookies.xmpRecipientID != '' ) {
+          $scope.setRecipientID($cookies.xmpRecipientID);
+      }
+  }
+
+  $scope.forgetRecipient = function(){
+      var d = new Date(1970,1,1);
+      var expires = "expires="+ d.toUTCString();
+      document.cookie =  "xmpRecipientID=;" + expires;
+      $scope.xmp.recipientID = null;
+  }
+
+
+    // login, so it is possible to run services [not passing cached recipient ID to make a point that this is anonymous]
   xmpResource.debug('anonymousViewController: running login only (no retrieve). service token cookie =', $cookies.xmpServiceToken, 'recipient id cookie =', $cookies.xmpRecipientID);
   xmpResource.login($cookies.xmpServiceToken,null,false).$promise.then(
       function(result)
@@ -24571,6 +25091,14 @@ commonControllersSetup($scope,
           // setup referred recipient
           referredRecipientSetup($scope,$location,$cookies,xmpResource);
 
+          if ($cookies.xmpRecipientID && $scope.xmp.shouldRememberRecipient) {
+              $scope.setRecipientID($cookies.xmpRecipientID);
+          }
+          //Here we check for default values in ADORS and place it inside the xmp.r object, will be used for xmp-register
+          if ($scope.formDefaultAdors)
+              $.each($scope.formDefaultAdors,function(key, value) {
+                  $scope.xmp.r[key] = value;
+              });
       },
       function(reason)
       {
@@ -24628,6 +25156,12 @@ commonControllersSetup($scope,
         }).$promise.then(function(result)
       {
 
+        console.log('inActionParameters.hasAutoSignIn=' + inActionParameters.hasAutoSignIn);
+
+        if (inActionParameters.hasAutoSignIn) {
+          setCookie('xmpSecurityToken', result.securityToken, 9999); // save persistent cookie
+        }
+
         // recipient ID and Data is
         $scope.xmp.recipientID = result.recipientID;
 
@@ -24639,9 +25173,20 @@ commonControllersSetup($scope,
         setupLoadStatus($scope.xmp,'r',resultAnalysis.readyADORs,eADORsLoaded);
         $scope.trackAsyncJobs(resultAnalysis.asyncJobs); 
 
+        $cookies.xmpRecipientID = $scope.xmp.recipientID; //Fix insert issue
 
-        // save in cookies for next page
-        $cookies.xmpRecipientID = $scope.xmp.recipientID;
+        // if xmp-remember-recipient id present on the controller then save persistent cookie
+        if ($scope.xmp.shouldRememberRecipient) {
+            setCookie('xmpRecipientID', $scope.xmp.recipientID, 9999); // save persistent cookie
+        } else {
+            setCookie('xmpRecipientID', $scope.xmp.recipientID, 0.01); // save in cookies for next page - For 15 min only
+        }
+        
+
+        // if cookie was set then update get recipient adors
+        if ($cookies.xmpRecipientID && $cookies.xmpRecipientID != '') {
+            $scope.setRecipientID($cookies.xmpRecipientID);
+        }
 
         // remove xmp from scope, so can access retrieved higher level content for things like
         // email sending and actions
@@ -24754,7 +25299,7 @@ xmpControllers.controller('XMPAnonymousView', ['$scope',
  * Available under MIT license <http://mths.be/mit>
  */
 ;(function() {
-  
+  'use strict';
 
   /** Used to determine if values are of the language type Object */
   var objectTypes = {
@@ -25827,1113 +26372,1254 @@ xmpControllers.controller('XMPAnonymousView', ['$scope',
 
 
 /*
-	xmpResource, defines the services required for XMPie.
-	It mostly implements a convenience javascript client for the REST API
-	with uCreate XM Server.
+ xmpResource, defines the services required for XMPie.
+ It mostly implements a convenience javascript client for the REST API
+ with uCreate XM Server.
 
-	to access the REST service methods one needs 2 elements:
-	1. uCreate XM Server URL - the address of the service which the site speaks with
-	2. resource token - Identifier for the particular resource at the server that is the source of data and other materials.
-						Resource token is calculated ןinternally in XMPResource as combination of an access token and a service token.
-						Access token is provided when logging to circle and is a combination of the login data and selection of project.
-						Service token is provided by making an initial call the xmpResource loging method. it may be cached after an initial login
-						with the data.
+ to access the REST service methods one needs 2 elements:
+ 1. uCreate XM Server URL - the address of the service which the site speaks with
+ 2. resource token - Identifier for the particular resource at the server that is the source of data and other materials.
+ Resource token is calculated ןinternally in XMPResource as combination of an access token and a service token.
+ Access token is provided when logging to circle and is a combination of the login data and selection of project.
+ Service token is provided by making an initial call the xmpResource loging method. it may be cached after an initial login
+ with the data.
 
-	For some services an extra recipient ID is required.
+ For some services an extra recipient ID is required.
 
-	initial call to the login function of the resource is required to enable the handshake with the REST service. it returns a service token
-	which may be used for later call with the access token as identifier of the caller and choice of target data source (resource).
+ initial call to the login function of the resource is required to enable the handshake with the REST service. it returns a service token
+ which may be used for later call with the access token as identifier of the caller and choice of target data source (resource).
 
-	default configuration of the server URL, access token and (cached) service token are possible. using xmpResourceProvider for .config you can make
-	a call to the provider .configure method passing a struture that defines either all or part of the 3:
+ default configuration of the server URL, access token and (cached) service token are possible. using xmpResourceProvider for .config you can make
+ a call to the provider .configure method passing a struture that defines either all or part of the 3:
 
-    inProvider.configure({
-      access:{
-      		url: THE_UCREATE_XM_SERVER_URL,
-      		accessToken: THE_ACCESS_TOKEN,
-      		serviceToken: THE_SERVICE_TOKEN
+ inProvider.configure({
+ access:{
+ url: THE_UCREATE_XM_SERVER_URL,
+ accessToken: THE_ACCESS_TOKEN,
+ serviceToken: THE_SERVICE_TOKEN
+ }
+ });
+
+ note that most times, you can avoid and call login instead. setting the serviceToken directly on the resource after will make sense.
+ do so by:
+ xmpResource.access.serviceToken = SERVICE_TOKEN
+
+
+ Alternatively to use defaults on the resource you can pass access data on every call. Each call recieves an options structure which may have access
+ structure which may have any of the keys (url, accessToken,serviceToken) which may override the defaults. like this:
+ the_call(the_call_params,{
+ access:
+ {
+ url: THE_UCREATE_XM_SERVER_URL,
+ accessToken: THE_ACCESS_TOKEN,
+ serviceToken: THE_SERVICE_TOKEN
+ },
+ .... [other call optional parameters]
+ },other_call_params);
+
+
+ other configuration parametsrs:
+
+ timeout - default timeouts for HTTP Calls, e.g.:
+ inProvider.configure({
+ timeout:1000
+ }
+ });
+ dontCacheGets - tells uCreate XM server not to cache any later "get" requests (adors and assts), e.g.:
+ inProvider.configure({
+ dontCacheGets:true
+ }
+ });
+ test - tells a later login to login with either test or none. by default the URL will be inpsected for "isTest" parameter.
+
+ */
+
+function XmpResource($resource, $http, $location, $log, inOptions) {
+    var self = this;
+    if (inOptions) {
+        ['access', 'timeout', 'debugEnabled', 'dontCacheGets'].forEach(function (inValue) {
+            if (inOptions[inValue] !== undefined)
+                self[inValue] = inOptions[inValue];
+        })
+    }
+    if (!this.access)
+        this.access = {};
+    this.resourceConfig = this.timeout !== undefined ? {timeout: this.timeout} : null;
+    this.$resource = $resource;
+    this.$http = $http;
+    this.$location = $location;
+    this.$log = $log;
+}
+
+
+function accessURL(self, inOptions) {
+    if (inOptions && inOptions.access) {
+        if (inOptions.access.url)
+            return inOptions.access.url;
+        else if (inOptions.access.URL)
+            return inOptions.access.URL;
+        else
+            return self.access.url
+    }
+    else
+        return self.access.url ? self.access.url : self.access.URL;
+}
+
+//Service token from context call (Login) - Not for DW, only for web to cache token, see XMPL API: GetCachedServiceToken
+function serviceToken(self, inOptions) {
+  return inOptions && inOptions.access ?
+        (inOptions.access.serviceToken ? inOptions.access.serviceToken : self.access.serviceToken) :
+        self.access.serviceToken; //xmpcfg.js
+}
+
+//Access Token from xmpcfg.js - also in DW
+function accessToken(self, inOptions) {
+
+  //Logs DW Only - in DW token from xmpcfg.js not from Options:
+  if(document.logCB) document.logCB('accessToken in xmp.js: self.access.accessToken=' + self.access.accessToken);
+
+  return inOptions && inOptions.access ?
+        (inOptions.access.accessToken ? inOptions.access.accessToken : self.access.accessToken) :
+        self.access.accessToken; //xmpcfg.js
+}
+
+//resourceToken = accessToken_serviceToken  => Send as token to XMPL server
+function resourceToken(self, inOptions) {
+    var st = serviceToken(self, inOptions);
+
+    var ret = accessToken(self, inOptions);
+
+  //Has service Token: return    resourceToken = accessToken_serviceToken
+    if(st && st.length > 0 && st!=ret && !document.logCB) //Check Not in DW (needed only in runtime) st.indexOf("__",0)<0
+        return ret + '_' + st;
+
+    //No Service token (or in DW): resourceToken = accessToken
+    return ret;
+}
+
+//DW Only - CircleToken:
+function GetCircleTokenEncrypted(){
+  if(typeof(CircleTokenEncrypted)!='undefined'){
+    if(document.logCB) document.logCB('xmp.js: CircleTokenEncrypted=' + CircleTokenEncrypted);
+    return CircleTokenEncrypted;
+  }
+  if(document.logCB) document.logCB('xmp.js: CircleTokenEncrypted=NULL');
+  return '';
+}
+
+function isTest(self, inOptions) {
+    return (inOptions && inOptions.test !== undefined) ? inOptions.test : (self.$location.search().isTest || self.test);
+}
+
+/*
+ Login is the first call to the service, aiming to get a service token.
+ In addition, if passing a site URL it can retrieve a recipient ID from it, if formed like XMPie purls.
+
+ The method accepts previous cached RID and service token - pass null if there's no such cache. inWithRIDDeciphering will tell the method
+ to ask for RID deciphering from the current site url. pass false if you don't want such deciphering - do that, as the server will fail if the URL
+ misfits.
+
+ for the sake of convenience, xmpResoruce.access.serviceToken is set with the retrieved token. This will allow calling
+ later methods without having to pass it in the options structure (as is the case for service URL and access token which are normally
+ configured in the initial configure method).
+
+ the returned result looks like this:
+ {
+ serviceToken:the_service_token,
+ recipientID:the_recipient_id
+ }
+
+ note that recipientID may be null or undefined, if recipient ID is not reqeusted.
+ the request will fail if asked for recipient ID deciphering and no ID is found in the URL
+ */
+
+XmpResource.prototype.login = function (inChachedServiceToken, inCachedRID, inWithRIDDeciphering, inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+
+    var xmpServer = this.$resource(
+        accessURL(this, inOptions) + '/v1/projects/context',
+        null,
+        {'login': {method: 'POST'}},
+        this.resourceConfig);
+    var self = this;
+    var options = {
+        accessToken: accessToken(this, inOptions),
+        isTest: isTest(this, inOptions),
+        siteURL: inWithRIDDeciphering ? this.$location.absUrl() : undefined,
+        cached: {
+            serviceToken: inChachedServiceToken,
+            recipientID: inCachedRID
+        }
+    };
+    return xmpServer.login({}, // no parameters all data passed in body
+        options,
+        function (value, responseHeaders) {
+            if (!self.access)
+                self.access = {};
+            self.access.serviceToken = value.serviceToken;
+
+            self.debug('XmpResource.login: login succeeded with input data = ', options, '. returned service token =', value.serviceToken);
+            if (inRunWhenSuccess)
+                inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.login: login failed with input data = ', options);
+            self.error('XmpResource.login: httpResponse = ', httpResponse);
+        }
+    );
+}
+
+
+/*
+ getRecipientADORs requests ADOR values for inRecipientID per the inOptions options structure provided.
+ options may have:
+ adors [optional] - array of requested ADORs. if not provided, all ADORs will be retrieved
+ async [optional] - if not passed, a resource is returned that when complete will have the recipient data key/value object.
+ if true, an async request will start a query job on the server, and return with a job ID.
+ later that ID may be requeried mutliple times with getRecipientQueryStatus.
+ getRecipientQueryStatus will return a status. when the status is ready it will also return the key value pair that
+ are the recipient values for the ADORs list.
+ login [optional] - login data, for login + query
+ resolved [optional] - array of ador names. adors in this list should be resolved. Note that it may be that 'resolved' will appear but 'adors' won't
+ noCache [optional] - boolean. don't use cache for this retrieve
+ idIsIndex [optional] - boolean. notes that the recipient ID passed is actually not its ID, but rather its index in the arbitrary collection of recipients
+ This should be used for simple iterations, from 0 to the recipients count which can be retrieved through getRecipientsCount
+
+
+ returned result, if non-async, is a dictionary of key-value, where a key is ador name, and value is the ador value.
+ if async, will return job id, status, and if done, also the dictionary with key-value providing the ador names/values.
+
+ ------
+ uImage
+ ------
+
+ Note that in case of ADORs that are implemented as uImage, the return value will not be a string, but rather an object defining
+ an async job, like this:
+ {
+ "uImage":true,
+ "jobID":THE_ASYNC_JOB_ID,
+ ["status":CURRENT_STATUS]
+ }
+
+ 'uImage' is a flag to mark this object as uImage (this will enable future devs).
+ 'jobID' is an async job id started for this uImage calculation.
+ 'status' is an optional data providing
+
+ if this is the case, use an async job loop to wait for the actual value. See getRecipientQueryStatus for getting status and final value.
+
+
+ -----
+ login
+ -----
+
+ getRecipientADORs may be optionally used for login, and spare the need for an initial (other) login. This is useful
+ when the page calls getRecipientADORs as an initial,mostly, phase, to save the need for extra REST call.
+
+ in this case pass the login requirements via the inOptions structure:
+ inOptions =
+ {
+ ....
+ login:{
+ cached:	{
+ serviceToken:inChachedServiceToken,
+ recipientID:inCachedRID
+ }
+ }
+ }
+ [acces token, required for login may be defined in the options structure in the normal way, and is passed as the "resource" parameter]
+ note that in this cases inRecipientID will be NULL as you don't have it yet. [it is determined by login]
+
+ In this case, the return result will be an object with two member:
+ 1. login - login result, like in login specs - {
+ serviceToken:the_service_token,
+ recipientID:the_recipient_id
+ }
+ 2. result - the result of the computation, as defined above, per async/non-async calls options
+ */
+
+XmpResource.prototype.getRecipientADORs = function (inRecipientID, inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+
+    var parameters =
+    {
+        rid: inRecipientID,
+        param: inOptions && inOptions.login ? "context" : '',// note that when using "login", this will be a dummy, as login data will result in retrieving recipient ID
+        accessToken: resourceToken(this, inOptions), // note that resourceToken will be valid also if login is done now, as service token will be null
+        // and so resourceToken = accessToken which is as the REST service expected this to be
+        adors: inOptions ? inOptions.adors : undefined,
+        async: inOptions ? inOptions.async : undefined,
+        resolved: inOptions ? inOptions.resolved : undefined,
+        idIsIndex: inOptions ? inOptions.idIsIndex : undefined,
+        noCache: this.dontCacheGets ? true : undefined
+    }
+
+
+  var xmpServer;
+  if (inOptions && inOptions.idIsIndex) //DW (configuration) mode use the RecipientsController (IHttpActionResult GetByIndex)
+  {
+    xmpServer = this.$resource(accessURL(this, inOptions) + '/resource/:accessToken/recipients/GetByIndex?Authorization=' + GetCircleTokenEncrypted(), null, null, this.resourceConfig);
+  }
+  else //Run time mode use the AdorValueController (IHttpActionResult Get)
+  {
+    xmpServer = this.$resource(accessURL(this, inOptions) + '/v1/projects/:accessToken/adorValues/:param', null, null, this.resourceConfig);
+  }
+
+
+
+
+    var self = this;
+
+    addOptionalLogin(this, inOptions ? inOptions.login : null, parameters);
+    return xmpServer.get(parameters,
+        function (value, responseHeaders) {
+            if (inOptions && inOptions.login) {
+                if (!self.access)
+                    self.access = {};
+                self.access.serviceToken = value.login.serviceToken;
+                self.debug('XmpResource.getRecipientADORs:+login succeeded with input data = ', parameters, 'and service token =', value.login.serviceToken);
+            }
+            else
+                self.debug('XmpResource.getRecipientADORs: succeeded with input data = ', parameters);
+            if (inRunWhenSuccess)
+                inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.getRecipientADORs: failed with input data = ', parameters);
+            self.error('XmpResource.getRecipientADORs: httpResponse = ', httpResponse);
+
+        }
+    );
+}
+
+function addOptionalLogin(self, inLogin, inParameters) {
+    if (inLogin) {
+        /*
+         optional login parameters setup
+         /resource/:accessToken/recipients/:id?login=true&&siteURL=THE_PURL&&isTest=IS_TEST&&cachedServiceToken=CACHED_SERVICE_TOKEN&&cachedRecipientID=CACHED_RECIPIENT_ID
+         */
+        inParameters.login = true;
+        inParameters.siteURL = self.$location.absUrl();
+        inParameters.isTest = isTest(self);
+        inParameters.cachedServiceToken = inLogin.cached ? inLogin.cached.serviceToken : null;
+        inParameters.cachedRecipientID = inLogin.cached ? inLogin.cached.recipientID : null;
+    }
+}
+
+
+XmpResource.prototype.getRecipientsCount = function (inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+    var self = this;
+    var xmpServer = this.$resource(accessURL(this, inOptions) + '/resource/:resource/recipients?Authorization=' + GetCircleTokenEncrypted(), null, null, this.resourceConfig);
+    return xmpServer.get({
+            count: true,
+            resource: resourceToken(this, inOptions)
+        },
+        function (value, responseHeaders) {
+            self.debug('XmpResource.getRecipientsCount: succeeded with count = ', value);
+            inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.getRecipientsCount failed');
+            self.error('XmpResource.getRecipientsCount: httpResponse = ', httpResponse);
+        });
+}
+
+XmpResource.prototype.getRecipientsIDFromIndex = function (inIndex, inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+    var self = this;
+    //DW (configuration) mode use the RecipientsController (IHttpActionResult GetByIndex)
+    var xmpServer = this.$resource(accessURL(this, inOptions) + '/resource/:accessToken/recipients/GetByIndex?Authorization=' + GetCircleTokenEncrypted(), null,null, this.resourceConfig);
+    return xmpServer.get({
+            index: inIndex,
+            accessToken: resourceToken(this, inOptions)
+        },
+        function (value, responseHeaders) {
+            self.debug('XmpResource.getRecipientsIDFromIndex: succeeded for index =', inIndex, 'value is =', value);
+            inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.getRecipientsIDFromIndex failed');
+            self.error('XmpResource.getRecipientsIDFromIndex: httpResponse = ', httpResponse);
+        });
+}
+
+XmpResource.prototype.getRecipientQueryStatus = function (inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+    var self = this;
+    var xmpServer = this.$resource(accessURL(this, inOptions) + '/v1/projects/:accessToken/asyncquery/:requestID', null, null, this.resourceConfig);
+    return xmpServer.get({
+            requestID: inOptions.jobID,
+            accessToken: resourceToken(this, inOptions)
+        },
+        function (value, responseHeaders) {
+            self.debug('XmpResource.getRecipientQueryStatus: succeeded with job id = ', inOptions.jobID);
+            inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.getRecipientQueryStatus: failed with job id = ', inOptions.jobID);
+            self.error('XmpResource.getRecipientQueryStatus: httpResponse = ', httpResponse);
+        });
+}
+
+XmpResource.prototype.getSchema = function (inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+    var self = this;
+    var xmpServer = this.$resource(accessURL(this, inOptions) + '/resource/:resource/schema?Authorization=' + GetCircleTokenEncrypted(), null, null, this.resourceConfig);
+    return xmpServer.get({resource: resourceToken(this, inOptions)},
+        function (value, responseHeaders) {
+            self.debug('XmpResource.getSchema: succeeded with options = ', inOptions);
+            inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.getSchema: failed with options = ', inOptions);
+            self.error('XmpResource.getSchema: httpResponse = ', httpResponse);
+        });
+}
+
+
+XmpResource.prototype.getAssetFetchingURL = function (inAssetName, inOptions) {
+    return accessURL(this, inOptions) + '/v1/projects/' + encodeURIComponent(resourceToken(this, inOptions)) + '/assets?resolved=' + encodeURIComponent(inAssetName);
+}
+
+XmpResource.prototype.fetchAsset = function (inAssetName, inOptions, inRunWhenFetched, inRunWhenFailed) {
+    return fetchURL(this, this.getAssetFetchingURL(inAssetName, inOptions), inRunWhenFetched, inRunWhenFailed);
+}
+
+function fetchURL(self, inURL, inRunWhenFetched, inRunWhenFailed) {
+    var req = self.$http.get(inURL, self.resourceConfig);
+    if (inRunWhenFetched)
+        req.success(inRunWhenFetched);
+    if (inRunWhenFailed)
+        req.error(inRunWhenFailed);
+    return req;
+}
+
+XmpResource.prototype.get = function (url, inRunWhenFetched, inRunWhenFailed) {
+    var req = this.$http.get(url);
+    if (inRunWhenFetched)
+        req.success(inRunWhenFetched);
+    if (inRunWhenFailed)
+        req.error(inRunWhenFailed);
+    return req;
+}
+
+function noOp() {
+}
+
+XmpResource.prototype.saveRecipientADORs = function (inRecipientID, inAdors, inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+    var self = this;
+    var xmpServer = this.$resource(
+        accessURL(this, inOptions) + '/v1/projects/:accessToken/adorValues',
+        null,
+        {'save': {method: 'PUT'}},
+        this.resourceConfig);
+    return xmpServer.save({
+            rid: inRecipientID,
+            accessToken: resourceToken(this, inOptions),
+            adors: inOptions ? inOptions.retrieveADORs : undefined, // adors for retrieve after udpate
+            resolved: inOptions ? inOptions.resolvedADORs : undefined
+        },
+        inAdors,
+        function (value, responseHeaders) {
+            self.debug('XmpResource.saveRecipientADORs: succeeded with recipient id = ', inRecipientID, 'and adors =', inAdors);
+            inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.saveRecipientADORs: failed with recipient id = ', inRecipientID, 'and adors =', inAdors);
+            self.error('XmpResource.saveRecipientADORs: httpResponse = ', httpResponse);
+        });
+}
+
+XmpResource.prototype.signin = function(inRecipientID, username, password, successUrl, failureJs, failureAttrElement, $location, scope, inOptions, inRunWhenSuccess, inRunWhenFailed) {
+  inRunWhenSuccess = inRunWhenSuccess || noOp;
+  inRunWhenFailed = inRunWhenFailed || noOp;
+
+  var self = this;
+  var xmpServer = this.$resource(
+    accessURL(this, inOptions) + '/v1/projects/auth/signIn',
+    null,
+    {'login': {method: 'POST'}},
+    this.resourceConfig);
+  return xmpServer.login({
+      RecipientID: inRecipientID,
+      AccessToken: resourceToken(this, inOptions),
+      Password: password,
+      UserName: username,
+      SiteURL: this.$location.absUrl()
+    },
+    function (value, responseHeaders) {
+      console.log(value);
+
+      setCookie('xmpSecurityToken', value.securityToken, 0.3);
+
+      self.debug('XmpResource.signin: succeeded with recipient id = ', inRecipientID );
+      inRunWhenSuccess(value, responseHeaders);
+
+      if (successUrl) {
+        changeLocation(scope, $location, successUrl, true)
       }
+    },
+    function (httpResponse) {
+
+      if (!httpResponse.response || httpResponse.response.config.url.indexOf('/projects/auth/signIn') === -1) {
+        inRunWhenFailed(httpResponse);
+        self.error('XmpResource.signin: failed with recipient id = ', inRecipientID);
+        self.error('XmpResource.signin: httpResponse = ', httpResponse.message ||  httpResponse);
+      }
+      if (failureAttrElement) {
+        failureAttrElement.addClass(failureAttrElement.attr('xmp-signin-status-class'))
+      }
+
+      if (failureJs)
+        eval(failureJs);
     });
+}
 
-	note that most times, you can avoid and call login instead. setting the serviceToken directly on the resource after will make sense.
-	do so by:
-	xmpResource.access.serviceToken = SERVICE_TOKEN
+XmpResource.prototype.signOut = function(inRecipientID, successUrl, $location, scope, inOptions, inRunWhenSuccess, inRunWhenFailed) {
+  inRunWhenSuccess = inRunWhenSuccess || noOp;
+  inRunWhenFailed = inRunWhenFailed || noOp;
+  var self = this;
+  var xmpServer = this.$resource(
+    accessURL(this, inOptions) + '/v1/projects/auth/signOut',
+    null,
+    {
+        'logout': {
+          method: 'POST',
+          headers: {
+            accessToken: resourceToken(this, inOptions),
+          }
+        }
+      },
+    this.resourceConfig);
+  return xmpServer.logout({
+     RecipientID: inRecipientID,
+    },
+    function (value, responseHeaders) {
+      deleteCookie('xmpSecurityToken');
+      self.debug('XmpResource.signOut: succeeded with recipient id = ', inRecipientID);
+      inRunWhenSuccess(value, responseHeaders);
 
+      if (successUrl) {
+        changeLocation(scope, $location, successUrl, true)
+      } else {
+        if (xmpcustom && xmpcustom.loginUrl) {
+          changeLocation(scope, $location, xmpcustom.loginUrl, true)
+        }
+      }
+    },
+    function (httpResponse) {
+      inRunWhenFailed(httpResponse);
+      self.error('XmpResource.signOut: failed with recipient id = ', inRecipientID);
+      self.error('XmpResource.signOut: httpResponse = ', httpResponse);
+    });
+}
 
-	Alternatively to use defaults on the resource you can pass access data on every call. Each call recieves an options structure which may have access
-	structure which may have any of the keys (url, accessToken,serviceToken) which may override the defaults. like this:
-	the_call(the_call_params,{
-		access:
-		{
-      		url: THE_UCREATE_XM_SERVER_URL,
-      		accessToken: THE_ACCESS_TOKEN,
-      		serviceToken: THE_SERVICE_TOKEN
-		},
-		.... [other call optional parameters]
-	},other_call_params);
+XmpResource.prototype.addRecipient = function (inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
 
+    var self = this;
+    var xmpServer = this.$resource(
+        accessURL(this, inOptions) + '/v1/projects/:accessToken/adorValues',
+        null,
+        {'add': {method: 'POST'}},
+        this.resourceConfig);
+    return xmpServer.add({
+            accessToken: resourceToken(this, inOptions),
+        },
+        {
+            newRecipientValues: inOptions.adors,
+            newRecipientRetrieveADORs: inOptions.retrieveADORs,
+            newRecipientResolvedADORs: inOptions.resolvedADORs
+        },
+        function (value, responseHeaders) {
+            self.debug('XmpResource.addRecipient: succeeded with values = ', inOptions.adors, 'and retrieved adors =', inOptions.retrieveADORs);
+            inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.addRecipient: failed with values = ', inOptions.adors, 'and retrieved adors =', inOptions.retrieveADORs);
+            self.error('XmpResource.addRecipient: httpResponse = ', httpResponse);
+        }
+    );
+}
 
-	other configuration parametsrs:
+XmpResource.prototype.addDefaultTrackingParameters = function (inParametersObject) {
+    /*
+     Add to inParametersObject some default tracking parameters, such as browser identity, screen resolutions etc.
+     [the list is originally from the legacy uCreate XM implementation. made marks here to explain meaning where
+     ++, set here,
+     --, should be taken care off by caller,
+     ?? will be added by uCreate XM Server for implementation reasons,
+     ** irrelevant
+     ]
 
-	timeout - default timeouts for HTTP Calls, e.g.:
-		inProvider.configure({
-				timeout:1000
-			}
-		});
-	dontCacheGets - tells uCreate XM server not to cache any later "get" requests (adors and assts), e.g.:
-		inProvider.configure({
-				dontCacheGets:true
-			}
-		});
-	test - tells a later login to login with either test or none. by default the URL will be inpsected for "isTest" parameter.
+     -- PageName, (the logical page name provided by user)
+     -- ActionName, (the logical name of the event)
+     -- ActionParams, (other parameter for the action)
+     ++ Screen Resolution, (client window resolution)
+     ++ Browser, (browser name and version)
+     ++ Platform, (os name and version)
+     ++ Human Language, (browser language)
+     ?? ClientIP, (client IP, provided by server according to relevant HTTP headers)
+     ++ PageURI, (page URL, with no parameters)
+     ++ ReferringPageURI, (page URL for the page that lead to this page, if relevant. normally for links cliecked on)
+     ?? UserSession, (server session ID, to track different work sessions)
+     ++ PageParams, (page query string parameters)
+     ?? IsLandingPage, (indication for landing page)
+     ++ Java Enabled, (javascript enabled on page. for this solution it'll alwasy be true)
+     ** XMPieSourceJobID, (job id for batch email where this page is the email body. legacy email solution not relevant for this solution)
+     */
 
-*/
+    inParametersObject['ScreenResolution'] = screen.width + 'x' + screen.height;
+    inParametersObject['Browser'] = platform.name + ' ' + platform.version;
+    inParametersObject['Platform'] = platform.os.family + ' ' + platform.os.version;
+    inParametersObject['HumanLanguage'] = navigator.systemLanguage || navigator.language || "Unknown";
+    inParametersObject['PageURI'] = this.$location.absUrl().substr(0, this.$location.absUrl().length - this.$location.url().length + this.$location.path().length);
+    inParametersObject['ReferringPageURI'] = document.referrer; // for document.referrer to work correctly you need to run the pages from actual server, not using file:/// protocol (dbl click on html web page)
+    inParametersObject['PageParams'] = this.$location.url().substr(this.$location.path().length + 1);
+    inParametersObject['JavaEnabled'] = 'true';
+    // mark TBDs for the server to decipher them
+    inParametersObject['ISLandingPage'] = 'TBD';
+    inParametersObject['ClientIP'] = 'TBD';
+    inParametersObject['UserSession'] = 'TBD';
 
-function XmpResource($resource,$http,$location,$log,inOptions)  
-{
-	var self = this;
-	if(inOptions)
-	{
-		['access','timeout','debugEnabled'].forEach(function(inValue)
-		{
-			if(inOptions[inValue] !== undefined)
-				self[inValue] = inOptions[inValue];
-		})
-	}
-	if(!this.access)
-		this.access = {};
-	this.resourceConfig = this.timeout !== undefined ? {timeout:this.timeout}:null;
-	this.$resource = $resource;
-	this.$http = $http;
-	this.$location = $location;
-	this.$log = $log;
+    return inParametersObject;
 }
 
 
-function accessURL(self,inOptions)
-{
-	return inOptions && inOptions.access ?
-		(inOptions.access.url ? inOptions.access.url:self.access.url):
-		self.access.url;
+XmpResource.prototype.trackEvent = function (inEventType, inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    /*
+     options can have
+     recipientID
+     access
+     sync
+
+     date (otherwise will provide current date)
+     properties
+
+
+     sync is provided so that events can be tracked on page unload. if always using async, than page
+     unload will cut the call.
+     */
+
+    var parameters = {
+        type: inEventType,
+        recipientID: inOptions.recipientID,
+        date: inOptions.date ? inOptions.date.toUTCString() : (new Date()).toUTCString(),
+    };
+
+    if (inOptions && inOptions.properties) {
+        for (var v in inOptions.properties) {
+            if (inOptions.properties.hasOwnProperty(v))
+                parameters[v] = inOptions.properties[v];
+        }
+    }
+
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+
+    var runWhenSuccess = function (value, responseHeaders) {
+        this.debug('XmpResource.trackEvent: succeeded with parameters = ', parameters);
+        inRunWhenSuccess(value, responseHeaders);
+    }.bind(this);
+
+    var runWhenFailed = function (httpResponse) {
+        inRunWhenFailed();
+        this.$log.error('XmpResource.trackEvent: failed with parameters = ', parameters);
+        this.$log.error('XmpResource.trackEvent: httpResponse = ', httpResponse);
+    }.bind(this);
+
+    if (inOptions && inOptions.sync) {
+        var ajaxObj = {
+          type: 'POST',
+          url: accessURL(this, inOptions) + '/v1/projects/' + encodeURIComponent(resourceToken(this, inOptions)) + '/events',
+          data: JSON.stringify(parameters),
+          contentType: "application/json; charset=utf-8",
+          success: runWhenSuccess,
+          async: false,
+          timeout: this.timeout
+        }
+        if (getCookie('xmpSecurityToken')) {
+          ajaxObj['headers'] = {
+            xmpSecurityToken : getCookie('xmpSecurityToken')
+          }
+        }
+        $.ajax(ajaxObj).fail(runWhenFailed);
+
+    }
+    else {
+        var xmpServer = this.$resource(
+            accessURL(this, inOptions) + '/v1/projects/:accessToken/events',
+            null,
+            {'add': {method: 'POST'}},
+            this.resourceConfig);
+        return xmpServer.add({
+                accessToken: resourceToken(this, inOptions),
+            },
+            parameters,
+            runWhenSuccess,
+            runWhenFailed
+        );
+    }
 }
 
-function serviceToken(self,inOptions)
-{
-	return inOptions && inOptions.access ?
-		(inOptions.access.serviceToken ? inOptions.access.serviceToken:self.access.serviceToken):
-		self.access.serviceToken;
+XmpResource.prototype.sendEmailorTrigger = function (inTouchpointID, inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+
+
+    var runWhenSuccess = function (value, responseHeaders) {
+        this.debug('XmpResource.sendEmailorTrigger: succeeded with email touchpoint id =', inTouchpointID, 'recipient id =', inOptions.recipientID, 'customizations =', inOptions.customizations);
+        inRunWhenSuccess(value, responseHeaders);
+    }.bind(this);
+
+    var runWhenFailed = function (httpResponse) {
+        inRunWhenFailed(httpResponse);
+        this.$log.error('XmpResource.sendEmailorTrigger: failed with email touchpoint id =', inTouchpointID, 'recipient id =', inOptions.recipientID, 'customizations =', inOptions.customizations);
+        this.$log.error('XmpResource.sendEmailorTrigger: httpResponse = ', httpResponse);
+    }.bind(this);
+
+    if (inOptions && inOptions.sync) {
+        var ajaxObj = {
+              type: 'POST',
+              url: accessURL(this, inOptions) + '/v1/projects/' + encodeURIComponent(resourceToken(this, inOptions)) + '/touchpoints/trigger',
+              data: JSON.stringify({
+                  touchPointID: inTouchpointID,
+                  recipientID: inOptions.recipientID,
+                  customizations: inOptions.customizations
+              }),
+              contentType: "application/json; charset=utf-8",
+              success: runWhenSuccess,
+              async: false
+          };
+          if (getCookie('xmpSecurityToken')) {
+            ajaxObj['headers'] = {
+              xmpSecurityToken : getCookie('xmpSecurityToken')
+            }
+          }
+          $.ajax(ajaxObj).fail(runWhenFailed);
+    }
+    else {
+        var xmpServer = this.$resource(
+            accessURL(this, inOptions) + '/v1/projects/:accessToken/touchpoints/trigger',
+            null,
+            {'send': {method: 'POST'}},
+            this.resourceConfig);
+        return xmpServer.send({
+                accessToken: resourceToken(this, inOptions),
+            },
+            {
+                touchPointID: inTouchpointID,
+                recipientID: inOptions.recipientID,
+                customizations: inOptions.customizations
+            },
+            runWhenSuccess,
+            runWhenFailed);
+    }
 }
 
-function accessToken(self,inOptions)
-{
-	return inOptions && inOptions.access ?
-		(inOptions.access.accessToken ? inOptions.access.accessToken:self.access.accessToken):
-		self.access.accessToken;
+XmpResource.prototype.getDocuments = function (inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    var self = this;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+    var xmpServer = this.$resource(accessURL(this, inOptions) + '/resource/:resource/documents?Authorization=' + GetCircleTokenEncrypted(), null,null, this.resourceConfig);
+    return xmpServer.get({resource: resourceToken(this, inOptions)},
+        function (value, responseHeaders) {
+            self.debug('XmpResource.getDocuments: succeeded with resource = ', resourceToken(self, inOptions));
+            inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.getDocuments: failed with resource = ', resourceToken(self, inOptions));
+            self.error('XmpResource.getDocuments: httpResponse = ', httpResponse);
+        });
 }
 
-function resourceToken(self,inOptions)
-{
-	var st = serviceToken(self,inOptions);
-	return accessToken(self,inOptions) + ((st && st.length > 0) ? ('_' + st):'');
-}
-
-
-function isTest(self,inOptions)
-{
-	return (inOptions && inOptions.test !== undefined) ? inOptions.test : (self.$location.search().isTest || self.test);
-}
-
-/*
-	Login is the first call to the service, aiming to get a service token.
-	In addition, if passing a site URL it can retrieve a recipient ID from it, if formed like XMPie purls.
-
-	The method accepts previous cached RID and service token - pass null if there's no such cache. inWithRIDDeciphering will tell the method
-	to ask for RID deciphering from the current site url. pass false if you don't want such deciphering - do that, as the server will fail if the URL
-	misfits.
-
-	for the sake of convenience, xmpResoruce.access.serviceToken is set with the retrieved token. This will allow calling
-	later methods without having to pass it in the options structure (as is the case for service URL and access token which are normally
-	configured in the initial configure method).
-
-	the returned result looks like this:
-	{
-		serviceToken:the_service_token,
-		recipientID:the_recipient_id
-	}
-
-	note that recipientID may be null or undefined, if recipient ID is not reqeusted.
-	the request will fail if asked for recipient ID deciphering and no ID is found in the URL
-*/
-
-XmpResource.prototype.login = function(inChachedServiceToken,inCachedRID,inWithRIDDeciphering,inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-
-	var xmpServer = this.$resource(
-								accessURL(this,inOptions) + '/login',
-								null,
-								{'login': {method: 'POST'}},
-								this.resourceConfig);
-	var self = this;
-	var options = {
-							accessToken:accessToken(this,inOptions),
-							isTest:isTest(this,inOptions),
-							siteURL:inWithRIDDeciphering ? this.$location.absUrl():undefined,
-							cached:	{
-								serviceToken:inChachedServiceToken,
-								recipientID:inCachedRID
-							}
-						};
-  	return xmpServer.login({}, // no parameters all data passed in body
-						options,
-						function(value,responseHeaders){
-									if(!self.access)
-										self.access = {};
-									self.access.serviceToken = value.serviceToken;
-
-									self.debug('XmpResource.login: login succeeded with input data = ',options,'. returned service token =',value.serviceToken);
-									if(inRunWhenSuccess)
-										inRunWhenSuccess(value,responseHeaders);
-						},
-						function(httpResponse)
-						{
-							inRunWhenFailed(httpResponse);
-							self.$log.error('XmpResource.login: login failed with input data = ',options);
-							self.$log.error('XmpResource.login: httpResponse = ',httpResponse);
-						}
-						);		
-}
-
-
-/*
-	getRecipientADORs requests ADOR values for inRecipientID per the inOptions options structure provided.
-	options may have:
-		adors [optional] - array of requested ADORs. if not provided, all ADORs will be retrieved
-		async [optional] - if not passed, a resource is returned that when complete will have the recipient data key/value object.
-							if true, an async request will start a query job on the server, and return with a job ID. 
-							later that ID may be requeried mutliple times with getRecipientQueryStatus. 
-							getRecipientQueryStatus will return a status. when the status is ready it will also return the key value pair that
-							are the recipient values for the ADORs list.
-		login [optional] - login data, for login + query
-		resolved [optional] - array of ador names. adors in this list should be resolved. Note that it may be that 'resolved' will appear but 'adors' won't
-		noCache [optional] - boolean. don't use cache for this retrieve
-		idIsIndex [optional] - boolean. notes that the recipient ID passed is actually not its ID, but rather its index in the arbitrary collection of recipients
-								This should be used for simple iterations, from 0 to the recipients count which can be retrieved through getRecipientsCount
-
-
-	returned result, if non-async, is a dictionary of key-value, where a key is ador name, and value is the ador value.
-	if async, will return job id, status, and if done, also the dictionary with key-value providing the ador names/values.
-
-	------
-	uImage
-	------
-
-	Note that in case of ADORs that are implemented as uImage, the return value will not be a string, but rather an object defining
-	an async job, like this:
-	{
-		"uImage":true,
-		"jobID":THE_ASYNC_JOB_ID,
-		["status":CURRENT_STATUS]
-	}
-
-	'uImage' is a flag to mark this object as uImage (this will enable future devs).
-	'jobID' is an async job id started for this uImage calculation.
-	'status' is an optional data providing
-
-	if this is the case, use an async job loop to wait for the actual value. See getRecipientQueryStatus for getting status and final value.
-
-
-	-----
-	login
-	-----
-
-	getRecipientADORs may be optionally used for login, and spare the need for an initial (other) login. This is useful
-	when the page calls getRecipientADORs as an initial,mostly, phase, to save the need for extra REST call.
-
-	in this case pass the login requirements via the inOptions structure:
-	inOptions = 
-	{
-		....
-		login:{
-			cached:	{
-				serviceToken:inChachedServiceToken,
-				recipientID:inCachedRID
-			}
-		}
-	}
-	[acces token, required for login may be defined in the options structure in the normal way, and is passed as the "resource" parameter]
-	note that in this cases inRecipientID will be NULL as you don't have it yet. [it is determined by login]
-
-	In this case, the return result will be an object with two member:
-	1. login - login result, like in login specs - {
-							serviceToken:the_service_token,
-							recipientID:the_recipient_id
-						}
-	2. result - the result of the computation, as defined above, per async/non-async calls options
-*/
-
-XmpResource.prototype.getRecipientADORs = function(inRecipientID,inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-	var xmpServer = this.$resource(accessURL(this,inOptions) + '/resource/:resource/recipients/:recipientID',null,null,this.resourceConfig);
-
-	var parameters = 
-		{
-			recipientID:inRecipientID !== undefined &&  inRecipientID !== null ? inRecipientID:'login', // note that when using "login", this will be a dummy, as login data will result in retrieving recipient ID
-	  		resource:resourceToken(this,inOptions), // note that resourceToken will be valid also if login is done now, as service token will be null
-	  												// and so resourceToken = accessToken which is as the REST service expected this to be
-			adors:inOptions? inOptions.adors:undefined,
-			async:inOptions? inOptions.async:undefined,
-			resolved: inOptions? inOptions.resolved:undefined,
-			idIsIndex:inOptions? inOptions.idIsIndex:undefined,
-			noCache:this.dontCacheGets ? true:undefined	
-		}
-
-
-	var self = this;
-
-	addOptionalLogin(this,inOptions ? inOptions.login:null,parameters);
-  	return xmpServer.get(parameters,
-						function(value,responseHeaders){
-									if(inOptions && inOptions.login)
-									{
-										if(!self.access)
-											self.access = {};
-										self.access.serviceToken = value.login.serviceToken;
-										self.debug('XmpResource.getRecipientADORs:+login succeeded with input data = ',parameters,'and service token =',value.login.serviceToken);
-									}
-									else
-										self.debug('XmpResource.getRecipientADORs: succeeded with input data = ',parameters);
-									if(inRunWhenSuccess)
-										inRunWhenSuccess(value,responseHeaders);
-								},
-						function(httpResponse)
-						{
-							inRunWhenFailed(httpResponse);
-							self.$log.error('XmpResource.getRecipientADORs: failed with input data = ',parameters);
-							self.$log.error('XmpResource.getRecipientADORs: httpResponse = ',httpResponse);
-
-						}
-						);
-}
-
-function addOptionalLogin(self,inLogin,inParameters)
-{
-	if(inLogin)
-	{
-		/*
-			optional login parameters setup
-			/resource/:accessToken/recipients/:id?login=true&&siteURL=THE_PURL&&isTest=IS_TEST&&cachedServiceToken=CACHED_SERVICE_TOKEN&&cachedRecipientID=CACHED_RECIPIENT_ID
-		*/
-		inParameters.login = true;
-		inParameters.siteURL = self.$location.absUrl();
-		inParameters.isTest = isTest(self);
-		inParameters.cachedServiceToken = inLogin.cached ? inLogin.cached.serviceToken:null;
-		inParameters.cachedRecipientID = inLogin.cached ? inLogin.cached.recipientID:null;
-	}	
+XmpResource.prototype.getEmailDocuments = function (inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    var self = this;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+    var xmpServer = this.$resource(accessURL(this, inOptions) + '/resource/:resource/emaildocuments?Authorization=' + GetCircleTokenEncrypted(), null,null, this.resourceConfig);
+    return xmpServer.get({resource: resourceToken(this, inOptions)},
+        function (value, responseHeaders) {
+            self.debug('XmpResource.getEmailDocuments: succeeded with resource = ', resourceToken(self, inOptions));
+            inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.getEmailDocuments: failed with resource = ', resourceToken(self, inOptions));
+            self.error('XmpResource.getEmailDocuments: httpResponse = ', httpResponse);
+        });
 }
 
 
-XmpResource.prototype.getRecipientsCount = function(inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-	var self = this;	
-	var xmpServer = this.$resource(accessURL(this,inOptions) + '/resource/:resource/recipients',null,null,this.resourceConfig);
-  	return xmpServer.get({count:true,
-  							resource:resourceToken(this,inOptions)},
-							function(value,responseHeaders)
-							{
-								self.debug('XmpResource.getRecipientsCount: succeeded with count = ',value);
-								inRunWhenSuccess(value,responseHeaders);
-							},  							
-  							function(httpResponse)
-							{
-								inRunWhenFailed(httpResponse);
-								self.$log.error('XmpResource.getRecipientsCount failed');
-								self.$log.error('XmpResource.getRecipientsCount: httpResponse = ',httpResponse);
-							});
+XmpResource.prototype.getEmailTouchpoints = function (inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+    var self = this;
+    var xmpServer = this.$resource(accessURL(this, inOptions) + '/resource/:resource/emailtouchpoints?Authorization=' + GetCircleTokenEncrypted(), null, null, this.resourceConfig);
+    return xmpServer.get({resource: resourceToken(this, inOptions)},
+        function (value, responseHeaders) {
+            self.debug('XmpResource.getEmailTouchpoints: succeeded with resource = ', resourceToken(self, inOptions));
+            inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.getEmailTouchpoints: failed with resource = ', resourceToken(self, inOptions));
+            self.error('XmpResource.getEmailTouchpoints: httpResponse = ', httpResponse);
+        });
 }
 
-XmpResource.prototype.getRecipientsIDFromIndex = function(inIndex,inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-	var self = this;	
-	var xmpServer = this.$resource(accessURL(this,inOptions) + '/resource/:resource/recipients',null,null,this.resourceConfig);
-  	return xmpServer.get({index:inIndex,
-  							resource:resourceToken(this,inOptions)},
-							function(value,responseHeaders)
-							{
-								self.debug('XmpResource.getRecipientsIDFromIndex: succeeded for index =',inIndex,'value is =',value);
-								inRunWhenSuccess(value,responseHeaders);
-							},  							
-  							function(httpResponse)
-							{
-								inRunWhenFailed(httpResponse);
-								self.$log.error('XmpResource.getRecipientsIDFromIndex failed');
-								self.$log.error('XmpResource.getRecipientsIDFromIndex: httpResponse = ',httpResponse);
-							});
-}
-
-XmpResource.prototype.getRecipientQueryStatus = function(inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-	var self = this;	
-	var xmpServer = this.$resource(accessURL(this,inOptions) + '/resource/:resource/asyncquery/:jobID',null,null,this.resourceConfig);
-  	return xmpServer.get({jobID:inOptions.jobID,
-  							resource:resourceToken(this,inOptions)},
-							function(value,responseHeaders)
-							{
-								self.debug('XmpResource.getRecipientQueryStatus: succeeded with job id = ',inOptions.jobID);
-								inRunWhenSuccess(value,responseHeaders);
-							},  							
-  							function(httpResponse)
-							{
-								inRunWhenFailed(httpResponse);
-								self.$log.error('XmpResource.getRecipientQueryStatus: failed with job id = ',inOptions.jobID);
-								self.$log.error('XmpResource.getRecipientQueryStatus: httpResponse = ',httpResponse);
-							});
-}
-
-XmpResource.prototype.getSchema = function(inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-	var self = this;	
-	var xmpServer = this.$resource(accessURL(this,inOptions) + '/resource/:resource/schema',null,null,this.resourceConfig);
-  	return xmpServer.get({resource:resourceToken(this,inOptions)},
-							function(value,responseHeaders)
-							{
-								self.debug('XmpResource.getSchema: succeeded with options = ',inOptions);
-								inRunWhenSuccess(value,responseHeaders);
-							},  							
-  							function(httpResponse)
-							{
-								inRunWhenFailed(httpResponse);
-								self.$log.error('XmpResource.getSchema: failed with options = ',inOptions);
-								self.$log.error('XmpResource.getSchema: httpResponse = ',httpResponse);
-							}); 	
+XmpResource.prototype.getEmailFooters = function (inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+    var self = this;
+    var xmpServer = this.$resource(accessURL(this, inOptions) + '/resource/:resource/emailfooters?Authorization=' + GetCircleTokenEncrypted(), null,  null, this.resourceConfig);
+    return xmpServer.get({resource: resourceToken(this, inOptions)},
+        function (value, responseHeaders) {
+            self.debug('XmpResource.getEmailFooters: succeeded with resource = ', resourceToken(self, inOptions));
+            inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.getEmailFooters: failed with resource = ', resourceToken(self, inOptions));
+            self.error('XmpResource.getEmailFooters: httpResponse = ', httpResponse);
+        });
 }
 
 
+XmpResource.prototype.startGenerationJob = function (inDocumentID, inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+    var self = this;
 
-
-XmpResource.prototype.getAssetFetchingURL = function(inAssetName,inOptions)
-{
-	return accessURL(this,inOptions) + '/resource/' + encodeURIComponent(resourceToken(this,inOptions)) + '/assets?resolved=' + encodeURIComponent(inAssetName);
+    var xmpServer = this.$resource(
+        accessURL(this, inOptions) + '/resource/:resource/generationjobs?Authorization=' + GetCircleTokenEncrypted(),
+        null,
+        {'send': {method: 'POST'}},
+        this.resourceConfig);
+    return xmpServer.send({
+            resource: resourceToken(this, inOptions),
+        },
+        {
+            documentID: inDocumentID,
+            recipientID: inOptions.recipientID
+        },
+        function (value, responseHeaders) {
+            self.debug('XmpResource.startGenerationJob: succeeded with document id =', inDocumentID, 'and recipient ID =', inOptions.recipientID);
+            inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.startGenerationJob: failed with document id =', inDocumentID, 'and recipient ID =', inOptions.recipientID);
+            self.error('XmpResource.startGenerationJob: httpResponse = ', httpResponse);
+        });
 }
 
-XmpResource.prototype.fetchAsset = function(inAssetName,inOptions,inRunWhenFetched,inRunWhenFailed)
-{
-	return fetchURL(this,this.getAssetFetchingURL(inAssetName,inOptions),inRunWhenFetched,inRunWhenFailed);
+XmpResource.prototype.getGenerationJobStatus = function (inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+    var self = this;
+    var xmpServer = this.$resource(accessURL(this, inOptions) + '/resource/:resource/generationjobs/' + inOptions.jobID + '?Authorization=' + GetCircleTokenEncrypted(), null, null, this.resourceConfig);
+    return xmpServer.get({resource: resourceToken(this, inOptions)},
+        function (value, responseHeaders) {
+            self.debug('XmpResource.getGenerationJobStatus: succeeded with job id = ', inOptions.jobID);
+            inRunWhenSuccess(value, responseHeaders);
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.getGenerationJobStatus: failed with job id = ', inOptions.jobID);
+            self.error('XmpResource.getGenerationJobStatus: httpResponse = ', httpResponse);
+        });
 }
 
-function fetchURL(self,inURL,inRunWhenFetched,inRunWhenFailed)
-{
-	var req = self.$http.get(inURL,self.resourceConfig);
-	if(inRunWhenFetched)
-		req.success(inRunWhenFetched);
-	if(inRunWhenFailed)
-		req.error(inRunWhenFailed);
-	return req;
+XmpResource.prototype.getGeneratedFileFetchingURL = function (inOptions) {
+    var fileID = (typeof inOptions == 'string') ? inOptions : inOptions.fileID;
+
+    return accessURL(this, inOptions) + '/resource/' + encodeURIComponent(resourceToken(this, inOptions)) + '/generatedfiles/' + encodeURIComponent(fileID) +'?Authorization=' + GetCircleTokenEncrypted();
 }
 
-XmpResource.prototype.get = function(url,inRunWhenFetched,inRunWhenFailed)
-{
-	var req = this.$http.get(url);
-	if(inRunWhenFetched)
-		req.success(inRunWhenFetched);
-	if(inRunWhenFailed)
-		req.error(inRunWhenFailed);
-	return req;
+XmpResource.prototype.fetchGeneratedFile = function (inOptions, inRunWhenFetched, inRunWhenFailed) {
+    return fetchURL(this, this.getGeneratedFileFetchingURL(inOptions), inRunWhenFetched, inRunWhenFailed);
 }
 
-function noOp(){}
+XmpResource.prototype.changeUnsubscribeStatus = function (scope,$parse,$location,iAttrs,inRecipientID, inUnsubscribe, inOptions, inRunWhenSuccess, inRunWhenFailed) {
+    inRunWhenSuccess = inRunWhenSuccess || noOp;
+    inRunWhenFailed = inRunWhenFailed || noOp;
+    var self = this;
+    var xmpServer = this.$resource(
+        accessURL(this, inOptions) + '/v1/projects/:accessToken/touchpoints/trigger/unsubscribe',
+        null,
+        {'save': {method: 'PUT'}},
+        this.resourceConfig);
+    return xmpServer.save({
+            accessToken: resourceToken(this, inOptions)
+        },
+        {
+            status: inUnsubscribe,
+            recipientID: inRecipientID,
+            siteURL: this.$location.absUrl()
+        },
+        function (value, responseHeaders) {
+            self.debug('XmpResource.changeUnsubscribeStatus: succeeded with recipient id =', inRecipientID, 'and unsubscribe status =', inUnsubscribe);
+            inRunWhenSuccess(value, responseHeaders);
+            if (iAttrs.xmpSuccessNg)
+                $parse(iAttrs.xmpSuccessNg)(scope);
+            if (iAttrs.xmpSuccessJs)
+                eval(iAttrs.xmpSuccessJs);
+            if (iAttrs.xmpSuccessUrl)
+                changeLocation(scope, $location, iAttrs.xmpSuccessUrl, true); // enforce force reload, because might be in resolution phase and want a real reload for a new page
 
-XmpResource.prototype.saveRecipientADORs = function(inRecipientID,inAdors,inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-	var self = this;	
-	var xmpServer = this.$resource(
-								accessURL(this,inOptions) + '/resource/:resource/recipients/:recipientID',
-								null,
-								{'save': {method: 'PUT'}},
-								this.resourceConfig);
-  	return xmpServer.save({
-  								recipientID:inRecipientID,
-  								resource:resourceToken(this,inOptions),
-  								adors:inOptions? inOptions.retrieveADORs:undefined, // adors for retrieve after udpate
-  								resolved:inOptions? inOptions.resolvedADORs:undefined
-  							},
-  							inAdors,
-							function(value,responseHeaders)
-							{
-								self.debug('XmpResource.saveRecipientADORs: succeeded with recipient id = ',inRecipientID,'and adors =',inAdors);
-								inRunWhenSuccess(value,responseHeaders);
-							},  							
-  							function(httpResponse)
-							{
-								inRunWhenFailed(httpResponse);
-								self.$log.error('XmpResource.saveRecipientADORs: failed with recipient id = ',inRecipientID,'and adors =',inAdors);
-								self.$log.error('XmpResource.saveRecipientADORs: httpResponse = ',httpResponse);
-							});	
-}
-
-XmpResource.prototype.addRecipient = function(inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-
-	var self = this;	
-	var xmpServer = this.$resource(
-								accessURL(this,inOptions) + '/resource/:resource/recipients',
-								null,
-								{'add': {method: 'POST'}},
-								this.resourceConfig);
-  	return xmpServer.add({
-  							resource:resourceToken(this,inOptions),
-  						},
-						{
-							newRecipientValues:inOptions.adors,
-							newRecipientRetrieveADORs:inOptions.retrieveADORs,
-							newRecipientResolvedADORs:inOptions.resolvedADORs
-						},
-						function(value,responseHeaders)
-						{
-							self.debug('XmpResource.addRecipient: succeeded with values = ',inOptions.adors,'and retrieved adors =',inOptions.retrieveADORs);
-							inRunWhenSuccess(value,responseHeaders);
-						},  							
-						function(httpReponse)
-						{
-							inRunWhenFailed(httpResponse);
-							self.$log.error('XmpResource.addRecipient: failed with values = ',inOptions.adors,'and retrieved adors =',inOptions.retrieveADORs);
-							self.$log.error('XmpResource.addRecipient: httpResponse = ',httpResponse);
-						}
-						);	
-}
-
-XmpResource.prototype.addDefaultTrackingParameters = function(inParametersObject)
-{
-	/*
-		Add to inParametersObject some default tracking parameters, such as browser identity, screen resolutions etc.
-		[the list is originally from the legacy uCreate XM implementation. made marks here to explain meaning where 
-			++, set here, 
-			--, should be taken care off by caller, 
-			?? will be added by uCreate XM Server for implementation reasons,
-			** irrelevant
-		]
-
-		-- PageName, (the logical page name provided by user)
-		-- ActionName, (the logical name of the event)
-		-- ActionParams, (other parameter for the action)
-		++ Screen Resolution, (client window resolution)
-		++ Browser, (browser name and version)
-		++ Platform, (os name and version)
-		++ Human Language, (browser language)
-		?? ClientIP, (client IP, provided by server according to relevant HTTP headers)
-		++ PageURI, (page URL, with no parameters)
-		++ ReferringPageURI, (page URL for the page that lead to this page, if relevant. normally for links cliecked on)
-		?? UserSession, (server session ID, to track different work sessions)
-		++ PageParams, (page query string parameters)
-		?? IsLandingPage, (indication for landing page)
-		++ Java Enabled, (javascript enabled on page. for this solution it'll alwasy be true)
-		** XMPieSourceJobID, (job id for batch email where this page is the email body. legacy email solution not relevant for this solution)
-	*/
-
-	inParametersObject['Screen Resolution'] = screen.width + 'x' + screen.height;
-	inParametersObject['Browser'] = platform.name + ' ' + platform.version;
-	inParametersObject['Platform'] = platform.os.family + ' ' + platform.os.version;
-	inParametersObject['Human Language'] = navigator.systemLanguage || navigator.language ||  "Unknown";
-	inParametersObject['PageURI'] = this.$location.absUrl().substr(0,this.$location.absUrl().length - this.$location.url().length + this.$location.path().length);
-	inParametersObject['ReferringPageURI'] = document.referrer; // for document.referrer to work correctly you need to run the pages from actual server, not using file:/// protocol (dbl click on html web page)
-	inParametersObject['PageParams'] = this.$location.url().substr(this.$location.path().length + 1);
-	inParametersObject['Java Enabled'] = 'true';
-	// mark TBDs for the server to decipher them
-	inParametersObject['ISLandingPage'] = 'TBD'; 
-	inParametersObject['ClientIP'] = 'TBD'; 
-	inParametersObject['UserSession'] = 'TBD';
-
-	return inParametersObject;
-}
+        },
+        function (httpResponse) {
+            inRunWhenFailed(httpResponse);
+            self.error('XmpResource.changeUnsubscribeStatus: failed with recipient id =', inRecipientID, 'and unsubscribe status =', inUnsubscribe);
+            self.error('XmpResource.changeUnsubscribeStatus: httpResponse = ', httpResponse);
+            if (iAttrs.xmpFailureNg)
+                $parse(iAttrs.xmpFailureNg)(scope);
+            if (iAttrs.xmpFailureJs)
+                eval(iAttrs.xmpFailureJs);
+            if (iAttrs.xmpFailureUrl)
+                changeLocation(scope, $location, iAttrs.xmpFailureUrl, true); // enforce force reload, because might be in resolution phase and want a real reload for a new page
+        });
 
 
-XmpResource.prototype.trackEvent = function(inEventType,inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	/*
-		options can have
-			recipientID
-			access
-			sync
 
-			date (otherwise will provide current date)
-			properties
-
-
-			sync is provided so that events can be tracked on page unload. if always using async, than page
-			unload will cut the call. 
-	*/
-
-  	var parameters = {
-						type:inEventType,
-						recipientID:inOptions.recipientID,
-						date:inOptions.date ? inOptions.date.toUTCString() : (new Date()).toUTCString(),
-					};
-
-	if(inOptions && inOptions.properties)
-	{
-		for(var v in inOptions.properties)
-		{
-			if(inOptions.properties.hasOwnProperty(v))
-				parameters[v] = inOptions.properties[v];
-		}
-	}
-
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-
-	var runWhenSuccess = function(value,responseHeaders)
-	{
-		this.debug('XmpResource.trackEvent: succeeded with parameters = ',parameters);
-		inRunWhenSuccess(value,responseHeaders);
-	}.bind(this);
-
-	var runWhenFailed = function(httpResponse)
-	{
-		inRunWhenFailed();
-		this.$log.error('XmpResource.trackEvent: failed with parameters = ',parameters);
-		this.$log.error('XmpResource.trackEvent: httpResponse = ',httpResponse);
-	}.bind(this);
-
-	if(inOptions && inOptions.sync)
-	{
-		$.ajax({
-		  type: 'POST',
-		  url: accessURL(this,inOptions) + '/resource/' + encodeURIComponent(resourceToken(this,inOptions)) + '/events',
-		  data: JSON.stringify(parameters),
-          contentType: "application/json; charset=utf-8",				
-		  success: runWhenSuccess,
-		  async:false,
-		  timeout:this.timeout
-		}).fail(runWhenFailed);
-
-	}
-	else
-	{
-		var xmpServer = this.$resource(
-									accessURL(this,inOptions) + '/resource/:resource/events',
-									null,
-									{'add': {method: 'POST'}},
-									this.resourceConfig);
-	  	return xmpServer.add({
-	  							resource:resourceToken(this,inOptions),
-	  						},
-							parameters,
-							runWhenSuccess,
-							runWhenFailed
-							);	
-	}
-}
-
-XmpResource.prototype.sendEmail = function(inEmailTouchpointID,inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-
-
-	var runWhenSuccess = function(value,responseHeaders)
-	{
-		this.debug('XmpResource.sendEmail: succeeded with email touchpoint id =',inEmailTouchpointID,'recipient id =',inOptions.recipientID,'customizations =',inOptions.customizations);
-		inRunWhenSuccess(value,responseHeaders);
-	}.bind(this);
-
-	var runWhenFailed = function(httpResponse)
-	{
-		inRunWhenFailed(httpResponse);
-		this.$log.error('XmpResource.sendEmail: failed with email touchpoint id =',inEmailTouchpointID,'recipient id =',inOptions.recipientID,'customizations =',inOptions.customizations);
-		this.$log.error('XmpResource.sendEmail: httpResponse = ',httpResponse);
-	}.bind(this);
-
-	if(inOptions && inOptions.sync)
-	{
-		$.ajax({
-		  type: 'POST',
-		  url: accessURL(this,inOptions) + '/resource/' + encodeURIComponent(resourceToken(this,inOptions)) + '/emails',
-		  data: JSON.stringify({
-					emailTouchpointID:inEmailTouchpointID,
-					recipientID:inOptions.recipientID,
-					customizations:inOptions.customizations
-				}),
-          contentType: "application/json; charset=utf-8",				
-		  success: runWhenSuccess,
-		  async:false
-		}).fail(runWhenFailed);
-
-	}
-	else
-	{
-		var xmpServer = this.$resource(
-									accessURL(this,inOptions) + '/resource/:resource/emails',
-									null,
-									{'send': {method: 'POST'}},
-									this.resourceConfig);
-	  	return xmpServer.send({
-	  							resource:resourceToken(this,inOptions),
-	  						},
-							{
-								emailTouchpointID:inEmailTouchpointID,
-								recipientID:inOptions.recipientID,
-								customizations:inOptions.customizations
-							},
-							runWhenSuccess,
-							runWhenFailed);
-	}	
-}
-
-XmpResource.prototype.getDocuments = function(inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	var self=this;	
-	inRunWhenFailed = inRunWhenFailed || noOp;
-	var xmpServer = this.$resource(accessURL(this,inOptions) + '/resource/:resource/documents',null,null,this.resourceConfig);
-  	return xmpServer.get({resource:resourceToken(this,inOptions)},
-					function(value,responseHeaders)
-					{
-						self.debug('XmpResource.getDocuments: succeeded with resource = ',resourceToken(self,inOptions));
-						inRunWhenSuccess(value,responseHeaders);
-					},  							
-					function(httpResponse)
-					{
-						inRunWhenFailed(httpResponse);
-						self.$log.error('XmpResource.getDocuments: failed with resource = ',resourceToken(self,inOptions));
-						self.$log.error('XmpResource.getDocuments: httpResponse = ',httpResponse);
-					});
-}
-
-XmpResource.prototype.getEmailDocuments = function(inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	var self=this;	
-	inRunWhenFailed = inRunWhenFailed || noOp;
-	var xmpServer = this.$resource(accessURL(this,inOptions) + '/resource/:resource/emaildocuments',null,null,this.resourceConfig);
-  	return xmpServer.get({resource:resourceToken(this,inOptions)},
-					function(value,responseHeaders)
-					{
-						self.debug('XmpResource.getEmailDocuments: succeeded with resource = ',resourceToken(self,inOptions));
-						inRunWhenSuccess(value,responseHeaders);
-					},  							
-					function(httpResponse)
-					{
-						inRunWhenFailed(httpResponse);
-						self.$log.error('XmpResource.getEmailDocuments: failed with resource = ',resourceToken(self,inOptions));
-						self.$log.error('XmpResource.getEmailDocuments: httpResponse = ',httpResponse);
-					});
-}
-
-
-XmpResource.prototype.getEmailTouchpoints = function(inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-	var self=this;	
-	var xmpServer = this.$resource(accessURL(this,inOptions) + '/resource/:resource/emailtouchpoints',null,null,this.resourceConfig);
-  	return xmpServer.get({resource:resourceToken(this,inOptions)},
-					function(value,responseHeaders)
-					{
-						self.debug('XmpResource.getEmailTouchpoints: succeeded with resource = ',resourceToken(self,inOptions));
-						inRunWhenSuccess(value,responseHeaders);
-					},  							
-					function(httpResponse)
-					{
-						inRunWhenFailed(httpResponse);
-						self.$log.error('XmpResource.getEmailTouchpoints: failed with resource = ',resourceToken(self,inOptions));
-						self.$log.error('XmpResource.getEmailTouchpoints: httpResponse = ',httpResponse);
-					});  		
-}
-
-XmpResource.prototype.getEmailFooters = function(inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-	var self=this;	
-	var xmpServer = this.$resource(accessURL(this,inOptions) + '/resource/:resource/emailfooters',null,null,this.resourceConfig);
-  	return xmpServer.get({resource:resourceToken(this,inOptions)},
-					function(value,responseHeaders)
-					{
-						self.debug('XmpResource.getEmailFooters: succeeded with resource = ',resourceToken(self,inOptions));
-						inRunWhenSuccess(value,responseHeaders);
-					},  							
-					function(httpResponse)
-					{
-						inRunWhenFailed(httpResponse);
-						self.$log.error('XmpResource.getEmailFooters: failed with resource = ',resourceToken(self,inOptions));
-						self.$log.error('XmpResource.getEmailFooters: httpResponse = ',httpResponse);
-					});  		
-}
-
-
-XmpResource.prototype.startGenerationJob = function(inDocumentID,inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-	var self=this;	
-
-	var xmpServer = this.$resource(
-								accessURL(this,inOptions) + '/resource/:resource/generationjobs',
-								null,
-								{'send': {method: 'POST'}},
-								this.resourceConfig);
-  	return xmpServer.send({
-  							resource:resourceToken(this,inOptions),
-  						},
-						{
-							documentID:inDocumentID,
-							recipientID:inOptions.recipientID
-						},
-						function(value,responseHeaders)
-						{
-							self.debug('XmpResource.startGenerationJob: succeeded with document id =',inDocumentID,'and recipient ID =',inOptions.recipientID);
-							inRunWhenSuccess(value,responseHeaders);
-						},  							
-						function(httpResponse)
-						{
-							inRunWhenFailed(httpResponse);
-							self.$log.error('XmpResource.startGenerationJob: failed with document id =',inDocumentID,'and recipient ID =',inOptions.recipientID);
-							self.$log.error('XmpResource.startGenerationJob: httpResponse = ',httpResponse);
-						});
-}
-
-XmpResource.prototype.getGenerationJobStatus = function(inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-	var self=this;	
-	var xmpServer = this.$resource(accessURL(this,inOptions) + '/resource/:resource/generationjobs/:jobID',null,null,this.resourceConfig);
-  	return xmpServer.get({jobID:inOptions.jobID,
-  							resource:resourceToken(this,inOptions)},
-							function(value,responseHeaders)
-							{
-								self.debug('XmpResource.getGenerationJobStatus: succeeded with job id = ',inOptions.jobID);
-								inRunWhenSuccess(value,responseHeaders);
-							},  							
-  							function(httpResponse)
-							{
-								inRunWhenFailed(httpResponse);
-								self.$log.error('XmpResource.getGenerationJobStatus: failed with job id = ',inOptions.jobID);
-								self.$log.error('XmpResource.getGenerationJobStatus: httpResponse = ',httpResponse);
-							});
-}
-
-XmpResource.prototype.getGeneratedFileFetchingURL = function(inOptions)
-{
-	var fileID = (typeof inOptions == 'string') ? inOptions:inOptions.fileID;
-
-	return accessURL(this,inOptions) + '/resource/' + encodeURIComponent(resourceToken(this,inOptions)) + '/generatedfiles/' + encodeURIComponent(fileID);
-}
-
-XmpResource.prototype.fetchGeneratedFile = function(inOptions,inRunWhenFetched,inRunWhenFailed)
-{
-	return fetchURL(this,this.getGeneratedFileFetchingURL(inOptions),inRunWhenFetched,inRunWhenFailed);
-}
-
-XmpResource.prototype.changeUnsubscribeStatus = function(inRecipientID,inUnsubscribe,inOptions,inRunWhenSuccess,inRunWhenFailed)
-{
-	inRunWhenSuccess = inRunWhenSuccess || noOp;
-	inRunWhenFailed = inRunWhenFailed || noOp;
-	var self=this;	
-	var xmpServer = this.$resource(
-								accessURL(this,inOptions) + '/resource/:resource/unsubscribe',
-								null,
-								{'save': {method: 'POST'}},
-								this.resourceConfig);
-  	return xmpServer.save({
-  								resource:resourceToken(this,inOptions)
-  							},
-  							{
-  								status:inUnsubscribe,
-  								recipientID:inRecipientID,
-  								siteURL:this.$location.absUrl()
-  							},
-							function(value,responseHeaders)
-							{
-								self.debug('XmpResource.changeUnsubscribeStatus: succeeded with recipient id =',inRecipientID,'and unsubscribe status =',inUnsubscribe);
-								inRunWhenSuccess(value,responseHeaders);
-							},  							
-  							function(httpResponse)
-							{
-								inRunWhenFailed(httpResponse);
-								self.$log.error('XmpResource.changeUnsubscribeStatus: failed with recipient id =',inRecipientID,'and unsubscribe status =',inUnsubscribe);
-								self.$log.error('XmpResource.changeUnsubscribeStatus: httpResponse = ',httpResponse);
-							});	
 }
 
 
 /*
-	Here starts ADOR names parsing
-*/
+ Here starts ADOR names parsing
+ */
 
 /*
-	populateADORsFromExpression is a general purpose method to figure out ADORs of either recipient
-	or referred recipient from an expression, be it text, attribute value or whatnot.
-	the input dictionaries are used as sets and will contain the end result of the parsing, each with the matching
-	ADORs
+ populateADORsFromExpression is a general purpose method to figure out ADORs of either recipient
+ or referred recipient from an expression, be it text, attribute value or whatnot.
+ the input dictionaries are used as sets and will contain the end result of the parsing, each with the matching
+ ADORs
+If AdorDefaultVal is defined then the dictionary will set in the ADOR with the appropiate default value
 */
-XmpResource.prototype.populateRecipientADORsInExpression = function(inExpression,inRecipientDictionary,inReferredRecipientDictionary,excludeRefer,excludeRecipient)
-{
-	/*
-		takes any r.XXXX in an angular expression and registers XXXX as an ADOR name
-	*/
-	// xmp.r.test (allow any non space after)
-	var results;
+XmpResource.prototype.populateRecipientADORsInExpression = function (inExpression, inRecipientDictionary, inReferredRecipientDictionary, excludeRefer, excludeRecipient, AdorDefaultVal) {
+    /*
+     takes any r.XXXX in an angular expression and registers XXXX as an ADOR name
+     */
+    // xmp.r.test (allow any non space after)
+    var results;
 
-	if(!excludeRecipient)
-	{
-		results = inExpression.match(/xmp\.r\.[\w]+/g);
-		if(results)
-		{
-			results.forEach(function(inElement)
-			{
-				inRecipientDictionary[inElement.substring(6)] = true;
-			});
-		}
-		// xmp.r['test'] (allow any by ] after)
-		results = inExpression.match(/xmp\.r\[(\"|\')[^\]]+/g);
-		if(results)
-		{
-			results.forEach(function(inElement)
-			{
-				inRecipientDictionary[inElement.substring(7,inElement.length-1)] = true;
-			});
-		}
-	}
+    if (!excludeRecipient) {
+        results = inExpression.match(/xmp\.r\.[\w]+/g);
+        if (results) {
+            results.forEach(function (inElement) {
 
-	/*
-		add also any referredRecipient.XXXX, for recipient fetch
-	*/
-	if(!excludeRefer)
-	{
-		results = inExpression.match(/xmp\.referredRecipient\.[\w]+/g);
-		if(results)
-		{
-			results.forEach(function(inElement)
-			{
-				inReferredRecipientDictionary[inElement.substring(22)] = true;
-			});
-		}
-		results = inExpression.match(/xmp\.referredRecipient\[(\"|\')[^\]]+/g);
-		if(results)
-		{
-			results.forEach(function(inElement)
-			{
-				inReferredRecipientDictionary[inElement.substring(23,inElement.length-1)] = true;
-			});
-		}
-	}
+                inRecipientDictionary[inElement.substring(6)] = AdorDefaultVal ? AdorDefaultVal : true;
+            });
+        }
+        // xmp.r['test'] (allow any by ] after)
+        results = inExpression.match(/xmp\.r\[(\"|\')[^\]]+/g);
+        if (results) {
+            results.forEach(function (inElement) {
+
+                inRecipientDictionary[inElement.substring(7, inElement.length - 1)] = AdorDefaultVal ? AdorDefaultVal : true;
+            });
+        }
+    }
+
+    /*
+     add also any referredRecipient.XXXX, for recipient fetch
+     */
+    if (!excludeRefer) {
+        results = inExpression.match(/xmp\.referredRecipient\.[\w]+/g);
+        if (results) {
+            results.forEach(function (inElement) {
+                inReferredRecipientDictionary[inElement.substring(22)] = AdorDefaultVal ? AdorDefaultVal : true;
+            });
+        }
+        results = inExpression.match(/xmp\.referredRecipient\[(\"|\')[^\]]+/g);
+        if (results) {
+            results.forEach(function (inElement) {
+                inReferredRecipientDictionary[inElement.substring(23, inElement.length - 1)] = AdorDefaultVal ? AdorDefaultVal : true;
+            });
+        }
+    }
 }
 
 /*
-	This method is specific to initial ADORs retrieval. it parses the ADORs in the expression
-	into the default dictionaries defined for getting ADORs
-*/
-XmpResource.prototype.declareRecipientADORsInExpression = function(inExpression)
-{
-	this.createDefaultRetrieveDictionaries();
-	this.populateRecipientADORsInExpression(inExpression,this.defaultAdorsForGet,this.defaultAdorsForReferredGet);
+ This method is specific to initial ADORs retrieval. it parses the ADORs in the expression
+ into the default dictionaries defined for getting ADORs
+ */
+XmpResource.prototype.declareRecipientADORsInExpression = function (inExpression) {
+    this.createDefaultRetrieveDictionaries();
+    this.populateRecipientADORsInExpression(inExpression, this.defaultAdorsForGet, this.defaultAdorsForReferredGet);
 }
 
 
 /*
-	This method is for initial ador retrieval, but scannning for resolved adors, rather then regular adors
-*/
-XmpResource.prototype.declareRecipientResolvedADORsInExpression = function(inExpression)
-{
-	this.createDefaultRetrieveDictionaries();
-	this.populateRecipientADORsInExpression(inExpression,this.defaultAdorsForResolve,this.defaultAdorsForReferredResolve);
+ This method is for initial ador retrieval, but scannning for resolved adors, rather then regular adors
+ */
+XmpResource.prototype.declareRecipientResolvedADORsInExpression = function (inExpression) {
+    this.createDefaultRetrieveDictionaries();
+    this.populateRecipientADORsInExpression(inExpression, this.defaultAdorsForResolve, this.defaultAdorsForReferredResolve);
 }
 
 
 /*
-	This method declares ADORs in attributes, keeping away from attributes that are not meant to be interesting.
-	This is used either while parsing for ADORs in an element, or specifically parsing ADORs in an element
-	that has an attribute that requires other attributes to be parsed, as they are used as parameters
-*/
+ This method declares ADORs in attributes, keeping away from attributes that are not meant to be interesting.
+ This is used either while parsing for ADORs in an element, or specifically parsing ADORs in an element
+ that has an attribute that requires other attributes to be parsed, as they are used as parameters
+ */
 
-function attributesExcludeCollection(inAttributes)
-{
-	return  inAttributes['xmpAsync'] !== undefined || 
-			inAttributes['xmp-async'] !== undefined ||
-			inAttributes['data-xmp-async'] !== undefined ||
-			inAttributes['xmpExcludeLoad'] !== undefined ||
-			inAttributes['xmp-exclude-load'] !== undefined ||
-			inAttributes['data-xmp-exclude-load'] !== undefined;
+function attributesExcludeCollection(inAttributes) {
+    return inAttributes['xmpAsync'] !== undefined ||
+        inAttributes['xmp-async'] !== undefined ||
+        inAttributes['data-xmp-async'] !== undefined ||
+        inAttributes['xmpExcludeLoad'] !== undefined ||
+        inAttributes['xmp-exclude-load'] !== undefined ||
+        inAttributes['data-xmp-exclude-load'] !== undefined;
 }
 
-function attributeCanBeCollected(inAttributeName)
-{
-	return (typeof(inAttributeName) == 'string' &&
-			inAttributeName.length > 0 && 
-			inAttributeName.charAt(0) != '$' && 
-			
-			inAttributeName!='xmpLoadAsyncAdor' &&
-			inAttributeName!='xmp-load-async-ador' &&
-			inAttributeName!='data-xmp-load-async-ador');
+function attributeCanBeCollected(inAttributeName) {
+    return (typeof(inAttributeName) == 'string' &&
+    inAttributeName.length > 0 &&
+    inAttributeName.charAt(0) != '$' &&
+
+    inAttributeName != 'xmpLoadAsyncAdor' &&
+    inAttributeName != 'xmp-load-async-ador' &&
+    inAttributeName != 'data-xmp-load-async-ador');
 
 }
 
-XmpResource.prototype.declareRecipientADORsInAttributes = function(inAttributes)
-{
+XmpResource.prototype.declareRecipientADORsInAttributes = function (inAttributes) {
 
-	this.createDefaultRetrieveDictionaries();
-	this.populateRecipientADORsInAttributes(inAttributes,this.defaultAdorsForGet,this.defaultAdorsForReferredGet);
+    this.createDefaultRetrieveDictionaries();
+    this.populateRecipientADORsInAttributes(inAttributes, this.defaultAdorsForGet, this.defaultAdorsForReferredGet);
 }
 
-XmpResource.prototype.populateRecipientADORsInAttributes = function(inAttributes,inRecipientDictionary,inReferredRecipientDictionary,excludeRefer,excludeRecipient,dontCheckForExclusion)
-{
-	// this method checks for xmpAsync attribute, in which case declaration is not allowed
-	if(attributesExcludeCollection(inAttributes))
+XmpResource.prototype.populateRecipientADORsInAttributes = function (inAttributes, inRecipientDictionary, inReferredRecipientDictionary, excludeRefer, excludeRecipient, dontCheckForExclusion) {
+    // this method checks for xmpAsync attribute, in which case declaration is not allowed
+    if (attributesExcludeCollection(inAttributes))
+        return;
+
+    if (!dontCheckForExclusion)
+        excludeRefer |= shouldExcludeReferredSearch(inAttributes);
+
+    var self = this;
+
+    // declare all ADORs in any attributes
+    angular.forEach(inAttributes, function (value, key) {
+        if (attributeCanBeCollected(key))
+            self.populateRecipientADORsInExpression(value, inRecipientDictionary, inReferredRecipientDictionary, excludeRefer, excludeRecipient)
+    });
+}
+
+
+/*
+ declare all ADORs used in an element. The element text content is searched as well as its children
+ */
+
+XmpResource.prototype.declareRecipientADORsInJQueryElement = function (inJElement) {
+    this.createDefaultRetrieveDictionaries();
+    this.populateRecipientADORsInJQueryElement(inJElement, this.defaultAdorsForGet, this.defaultAdorsForReferredGet);
+}
+
+XmpResource.prototype.createDefaultRetrieveDictionaries = function () {
+    if (!this.defaultAdorsForGet)
+        this.defaultAdorsForGet = {};
+    if (!this.defaultAdorsForReferredGet)
+        this.defaultAdorsForReferredGet = {};
+    if (!this.defaultAdorsForResolve)
+        this.defaultAdorsForResolve = {};
+    if (!this.defaultAdorsForReferredResolve)
+        this.defaultAdorsForReferredResolve = {};
+}
+
+XmpResource.prototype.populateRecipientADORsInJQueryElement = function (inJElement, inRecipientDictionary, inReferredRecipientDictionary, excludeRefer, excludeRecipient, dontCheckForExclusion) {
+
+    // if has attributes collection, parse there [takes care of exclusion internally]
+    if (inJElement[0].attributes)
+        this.populateRecipientADORsInAttributes(htmlAttrsToPlainKeyValue(inJElement[0].attributes), inRecipientDictionary, inReferredRecipientDictionary, excludeRefer, excludeRecipient, dontCheckForExclusion);
+
+    // may want to exclude search for the children (cases of xmpRefer and xmpRegister forms)
+    if (inJElement[0].attributes && !dontCheckForExclusion)
+        excludeRefer |= shouldExcludeReferredSearch(htmlAttrsToPlainKeyValue(inJElement[0].attributes));
+
+
+    // if type text or comment, parse the text  (checking comments because of ngRepeat, which may appear in comment)
+    if (inJElement[0].nodeType == 3 || inJElement[0].nodeType == 8)
+        this.populateRecipientADORsInExpression(inJElement[0].nodeValue, inRecipientDictionary, inReferredRecipientDictionary, excludeRefer, excludeRecipient);
+
+    var self = this;
+	
+	//If iframe don't try to get sub contents (Bug in IE):
+	if(inJElement.is('iframe'))
 		return;
 
-	if(!dontCheckForExclusion)
-		excludeRefer |= shouldExcludeReferredSearch(inAttributes);
-
-	var self = this;
-
-	// declare all ADORs in any attributes
-	angular.forEach(inAttributes,function(value,key){
-		if(attributeCanBeCollected(key))
-			self.populateRecipientADORsInExpression(value,inRecipientDictionary,inReferredRecipientDictionary,excludeRefer,excludeRecipient)});	
+    // now loop on sub contents to recurse
+    inJElement.contents().each(function () {
+        self.populateRecipientADORsInJQueryElement($(this), inRecipientDictionary, inReferredRecipientDictionary, excludeRefer, excludeRecipient, dontCheckForExclusion);
+    })
 }
 
-
-
-
-/*
-	declare all ADORs used in an element. The element text content is searched as well as its children
-*/
-
-XmpResource.prototype.declareRecipientADORsInJQueryElement = function(inJElement)
-{
-	this.createDefaultRetrieveDictionaries();
-	this.populateRecipientADORsInJQueryElement(inJElement,this.defaultAdorsForGet,this.defaultAdorsForReferredGet);
+function canDebugExternal() {
+    typeof uCreateXMGlobal !== 'undefined' && typeof uCreateXMGlobal.logDebugFromExternalLibrary === 'function';
 }
 
-XmpResource.prototype.createDefaultRetrieveDictionaries = function()
-{
-	if(!this.defaultAdorsForGet)
-		this.defaultAdorsForGet = {};
-	if(!this.defaultAdorsForReferredGet)
-		this.defaultAdorsForReferredGet = {};
-	if(!this.defaultAdorsForResolve)
-		this.defaultAdorsForResolve = {};
-	if(!this.defaultAdorsForReferredResolve)
-		this.defaultAdorsForReferredResolve = {};
+XmpResource.prototype.debug = function () {
+    if (this.debugEnabled) // i'm using internal debug isntead of angulars, so i can update the debug enabling on the fly
+    {
+        console.debug.apply(console, arguments);
+        if (canDebugExternal())
+            uCreateXMGlobal.logDebugFromExternalLibrary.apply(uCreateXMGlobal, arguments)
+    }
 }
 
-XmpResource.prototype.populateRecipientADORsInJQueryElement = function(inJElement,inRecipientDictionary,inReferredRecipientDictionary,excludeRefer,excludeRecipient,dontCheckForExclusion)
-{
-
-	// if has attributes collection, parse there [takes care of exclusion internally]
-	if(inJElement[0].attributes)
-		this.populateRecipientADORsInAttributes(htmlAttrsToPlainKeyValue(inJElement[0].attributes),inRecipientDictionary,inReferredRecipientDictionary,excludeRefer,excludeRecipient,dontCheckForExclusion);
-
-	// may want to exclude search for the children (cases of xmpRefer and xmpRegister forms)
-	if(inJElement[0].attributes && !dontCheckForExclusion)
-		excludeRefer |= shouldExcludeReferredSearch(htmlAttrsToPlainKeyValue(inJElement[0].attributes));
-
-
-	// if type text or comment, parse the text  (checking comments because of ngRepeat, which may appear in comment)
-	if(inJElement[0].nodeType == 3 || inJElement[0].nodeType == 8)
-		this.populateRecipientADORsInExpression(inJElement[0].nodeValue,inRecipientDictionary,inReferredRecipientDictionary,excludeRefer,excludeRecipient);
-
-	var self = this;
-
-	// now loop on sub contents to recurse
-	inJElement.contents().each(function()
-	{
-		self.populateRecipientADORsInJQueryElement($(this),inRecipientDictionary,inReferredRecipientDictionary,excludeRefer,excludeRecipient,dontCheckForExclusion);
-	})		
+XmpResource.prototype.error = function () {
+    this.$log.error.apply(this.$log, arguments);
+    if (canDebugExternal())
+        uCreateXMGlobal.logErrorFromExternalLibrary.apply(uCreateXMGlobal, arguments)
 }
 
-XmpResource.prototype.debug = function()
-{
-	if(this.debugEnabled) // i'm using internal debug isntead of angulars, so i can update the debug enabling on the fly
-		console.debug.apply(console,arguments);
-}
+function htmlAttrsToPlainKeyValue(inAttrs) {
+    var result = {};
 
-XmpResource.prototype.error = function()
-{
-	this.$log.error.apply(this.$log,arguments);
-}
-
-function htmlAttrsToPlainKeyValue(inAttrs)
-{
-	var result = {};
-
-	$.each(inAttrs, function(i, attrib){
-		result[attrib.name] = attrib.value;
-	  });
-
-	return result;
-}
-
-function shouldExcludeReferredSearch(inAttributes)
-{
-	if(!inAttributes)
-		return false;
-
-	return  inAttributes['xmpRefer'] !== undefined || 
-			inAttributes['xmp-refer'] !== undefined ||
-			inAttributes['data-xmp-refer'] !== undefined ||
-			inAttributes['xmpReferForm'] !== undefined || 
-			inAttributes['xmp-refer-form'] !== undefined ||
-			inAttributes['data-xmp-refer-form'] !== undefined;
-}
-
-/*
-	Here end ADOR names parsing methods
-*/
-
-
-
-
-var xmpServices = angular.module('xmp.services', ['ngResource']).config(['$httpProvider', function($httpProvider) {
- $httpProvider.interceptors.push('noCacheInterceptor');
-}]).factory('noCacheInterceptor', function () {
-            return {
-                request: function (config) {
-                    if(config.method=='GET'){
-                        var separator = config.url.indexOf('?') === -1 ? '?' : '&';
-                        config.url = config.url+separator+'ieNoCache=' + new Date().getTime();
-                    }
-                    return config;
-               }
-           };
+    $.each(inAttrs, function (i, attrib) {
+        result[attrib.name] = attrib.value;
     });
- 
 
- /*
-	configuration can have:
+    return result;
+}
 
-	access, defining the url and access token for getting xmpie services [object. members are : token and url]
-	timeout, defining the http requests timeout
+function shouldExcludeReferredSearch(inAttributes) {
+    if (!inAttributes)
+        return false;
+
+    return inAttributes['xmpRefer'] !== undefined ||
+        inAttributes['xmp-refer'] !== undefined ||
+        inAttributes['data-xmp-refer'] !== undefined ||
+        inAttributes['xmpReferForm'] !== undefined ||
+        inAttributes['xmp-refer-form'] !== undefined ||
+        inAttributes['data-xmp-refer-form'] !== undefined;
+}
+
+/*
+ Here end ADOR names parsing methods
+ */
+
+
+var xmpServices = angular.module('xmp.services', ['ngResource']).config(['$httpProvider', function ($httpProvider) {
+    $httpProvider.interceptors.push('noCacheInterceptor');
+    $httpProvider.interceptors.push('xmHttpInterceptor');
+}]).factory('noCacheInterceptor', function () {
+    return {
+        request: function (config) {
+            if (config.method == 'GET') {
+                var separator = config.url.indexOf('?') === -1 ? '?' : '&';
+                config.url = config.url + separator + 'ieNoCache=' + new Date().getTime();
+            }
+            return config;
+        }
+    };
+})
+    .factory('xmHttpInterceptor', ['$q','$cookies', function ($q, $cookies) {
+        return {
+
+            'request': function (config) {
+                  if (getCookie('xmpSecurityToken')) {
+                    config.headers.xmpSecurityToken = getCookie('xmpSecurityToken');
+                  }
+                if (canDebugExternal())
+                    uCreateXMGlobal.logDebugFromExternalLibrary("xmHttpInterceptor xmp.services - request sent :", config);
+                return config;
+            },
+
+            'response': function (response) {
+                if (canDebugExternal())
+                    uCreateXMGlobal.logDebugFromExternalLibrary("xmHttpInterceptor xmp.services - response returned : ", response);
+                return response;
+            },
+
+            'responseError': function (response) {
+              if (!/\/events$/.test(response.config.url)) {
+                window.XMPLLastHttpError = response;
+              }
+
+                  //On Unauthorized returned ErrorCode = 9 with https status = 400 bad request:
+                  if (response.status === 400 && response.data && response.data.ErrorCode == 9) { 
+
+                    //Set RID before redirect to login:
+                    if(response.data.RecipientID!=null && response.data.RecipientID!='')
+                      setCookie('xmpRecipientID', response.data.RecipientID, 9999);
+  
+                    //Set project (for uStore FURL) before redirect to login:
+                    if(response.data.ServiceToken!=null && response.data.ServiceToken!='')
+                      setCookie('xmpServiceToken', response.data.ServiceToken, 9999);
+  
+                    //Handle error:
+                    if (window.xmpSigninOnPage) {
+                        return $q.reject({response:response,
+                            message:
+                            "xmHttpInterceptor xmp.services -  login failed "
+                        });
+                    } else {
+                    if (typeof xmpcustom !== 'undefined' && xmpcustom.loginUrl) {
+
+                     var params = [{
+                       key: 'rid',
+                       value: response.data.RecipientID
+                     },{
+                       key: 'IID',
+                       value: function () {
+                         var param = location.search.replace(/^\?/,'').split('&').filter(function(q) { return /^iid=/i.test(q) })[0]
+                         return param ? param.replace(/^iid=/i, '') : null;
+                       }()
+                     }]
+                       .filter(function(p) {return !!p.value;})
+                       .map(function(p) {return [p.key,'=',p.value].join('')})
+                       .join('&');
+
+                       window.location.href = xmpcustom.loginUrl + (params ? "?" : "") + params;
+                   } 
+                 }
+                }
+                if (canDebugExternal())
+                    uCreateXMGlobal.logErrorFromExternalLibrary("xmHttpInterceptor xmp.services - error in response : ", response);
+                return $q.reject(response);
+            }
+        };
+    }]);
+
+/*
+ configuration can have:
+
+ access, defining the url and access token for getting xmpie services [object. members are : token and url]
+ timeout, defining the http requests timeout
  */
 xmpServices.provider('xmpResource', function XmpResourceProvider() {
-	var options = null;
+    var options = null;
 
-	this.configure = function(inOptions)
-	{
-		 options = inOptions;
-	}
+    this.configure = function (inOptions) {
+        options = inOptions;
+    }
 
-	this.$get = ['$resource','$http','$location','$log',
-		function xmpResourceFactory($resource,$http,$location,$log)
-		{
-			return new XmpResource($resource,$http,$location,$log,options);
-		}];
+    this.$get = ['$resource', '$http', '$location', '$log',
+        function xmpResourceFactory($resource, $http, $location, $log) {
+            return new XmpResource($resource, $http, $location, $log, options);
+        }];
 });
 
 /**
@@ -26941,7 +27627,7 @@ xmpServices.provider('xmpResource', function XmpResourceProvider() {
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
-(function(window, angular, undefined) {
+(function(window, angular, undefined) {'use strict';
 
 /**
  * @ngdoc module
@@ -27138,7 +27824,7 @@ angular.module('ngCookies', ['ng']).
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
-(function(window, angular, undefined) {
+(function(window, angular, undefined) {'use strict';
 
 var $resourceMinErr = angular.$$minErr('$resource');
 
@@ -27743,6 +28429,14 @@ angular.module('ngResource', ['ng']).
 
 
 
+(function () {
+  var deleteAllXmpCookiesRef = deleteAllXmpCookies
+  var xmpClearCookieOnLoad = document.body.getAttribute('xmp-clear-all-cookies-onload')
+  if (typeof xmpClearCookieOnLoad !== 'undefined' && xmpClearCookieOnLoad!=null) {
+    deleteAllXmpCookiesRef()
+  }
+})();
+
 var xmpApp = angular.module('xmp.app', [
 	'xmp.directives',
   	'xmp.controllers',
@@ -27762,9 +28456,14 @@ var xmpApp = angular.module('xmp.app', [
 	                  					asyncWaitTime:xmpcfg.asyncWaitTime
 	                  				};
 	              				}
-);
+).filter('xmpTrustUrl', function ($sce) {
+  return function(url) {
+      return $sce.trustAsResourceUrl(url);
+  };
+});
+
 /*
-	xmpResourceDriver is a driver for xmp.services to be used for non angular scenarios.
+	xmpResourceDriverXmpl is a driver for xmp.services to be used for non angular scenarios.
 	It is good for either a scenario where an angular application does not exist on the page, and
 	one that does (in which case this code is ran in non-angular controlled parts)
 
@@ -27780,7 +28479,7 @@ var xmpApp = angular.module('xmp.app', [
 				e.g. 
 				xmpApp.run(['$injector',function($injector)
 				{
-				  new xmpResourceDriver({injector:$injector}).getRecipientADORs('gal.kahana',null,function(data){$('#txtArea').val(JSON.stringify(data))});
+				  new xmpResourceDriverXmpl({injector:$injector}).getRecipientADORs('gal.kahana',null,function(data){$('#txtArea').val(JSON.stringify(data))});
 				}]);
 
 	element - 	  Same as injector case, but pass an element on which one can find an injector (say, the application module). injector will be
@@ -27791,7 +28490,7 @@ var xmpApp = angular.module('xmp.app', [
 	by default, it is assumed that element setup exists, and it is on the document HTML object.
 */
 
-var xmpResourceDriver = function(inInitialization,inDoLogin,inDecipherRecipientID)
+var xmpResourceDriverXmpl = function(inInitialization,inDoLogin,inDecipherRecipientID)
 {
 
 	var self = this;
@@ -27843,8 +28542,8 @@ function init(self,inDoLogin,inDecipherRecipientID)
    		self.xmpResource.login(self.$cookies.xmpServiceToken,self.$cookies.xmpRecipientID,inDecipherRecipientID).$promise.then(function(value)
 	   		{
 	   			self.recipientID = value.recipientID;
-	   			self.$cookies.xmpServiceToken = value.serviceToken;
-	   			self.$cookies.xmpRecipientID = value.recipientID;
+				setCookie('xmpServiceToken',value.serviceToken, 9999);
+				setCookie('xmpRecipientID', value.recipientID, 9999);
 	      		markReady(self);
 	      	}
    		);
@@ -27859,9 +28558,9 @@ function init(self,inDoLogin,inDecipherRecipientID)
 
 function markReady(self)
 {
-  	// trigger ready event
-  	self.isReady = true;
-  	$(self).trigger('ready');
+	self.isReady = true;
+	// trigger custom ready event
+  	$(self).trigger('xmpResourceDriverXMPL::ready');
 }
 
 function getResource(self,inName)
@@ -27886,7 +28585,6 @@ function copyRelevantPrototype(self)
 			self[key] = function(){
 				return self.xmpResource[this.key].apply(self.xmpResource,arguments)
 			}.bind(obj);
-			
 		}
 	}
 }
@@ -27896,18 +28594,19 @@ function copyRelevantPrototype(self)
 	login/resource initial loading happened or not. This method ensures that the code
 	will be ran when loading completes
 */
-xmpResourceDriver.prototype.ready = function(inCB)
+xmpResourceDriverXmpl.prototype.ready = function(inCB)
 {
-	if(this.isReady)
+	if (this.isReady) {
 		return inCB.call(this);
-	else
-		$(this).one('ready',inCB);
+	} else {
+		$(this).one('xmpResourceDriverXMPL::ready', inCB);
+	}
 }
 
 
 
 /*
-	xmpControllerDriver is a driver for xmpie controllers.
+	xmpControllerDriverXmpl is a driver for xmpie controllers.
 	it is a simple provider allowing access to the "xmp" data strcuture available
 	for the controller scope, and scope.
 
@@ -27915,7 +28614,7 @@ xmpResourceDriver.prototype.ready = function(inCB)
 	Seems like running from document.ready or later should do the trick.
 
 */
-var xmpControllerDriver = function(inJController)
+var xmpControllerDriverXmpl = function(inJController)
 {
 	this.controller = angular.element(inJController);
 
@@ -27932,9 +28631,38 @@ var xmpControllerDriver = function(inJController)
 
 }
 
-xmpControllerDriver.prototype.ready = function(inCB)
+xmpControllerDriverXmpl.prototype.ready = function(inCB)
 {
 	this.scope.xmpReady(inCB);
 }
 
 ;
+
+
+/***********************************************************************************/
+//Because we place all block in $(document).ready function we needed to expose these global variables outside xmpControllerDriver, xmpResourceDriver
+xmpControllerDriver = xmpControllerDriverXmpl;
+xmpResourceDriver = xmpResourceDriverXmpl;
+
+//mapOnReady is a variable that will be used by xmp-map directive, will be be fired once angular xmp.app modules are ready
+if (typeof mapOnReady != 'undefined')
+	mapOnReady();
+
+//angularComponenetsOnReady is a variable that will be used by a user who develop customized script and defined new directive, controller or new angular applicaton on top of xmp.app application
+//will be be fired once angular xmp.app modules are ready
+if (typeof angularComponentsOnReady != 'undefined')
+	angularComponentsOnReady();
+
+//xmplOnReady is a variable that will be defined by a user who develop customized script, the function xmplOnReady will be fired once xmp.app directived and controllers are ready in the browser
+angular.element(document).ready(function () {
+if (typeof xmplOnReady != 'undefined') 
+	xmplOnReady();
+});
+
+});//end $(document).ready(function() 
+
+}; //end loadXmplGeneralScript
+
+
+waitForScriptLoad(1);
+
