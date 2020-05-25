@@ -1,1 +1,1 @@
-var xmpcfg = {access: { accessToken: '8ae058d5-31f0-4e12-8a47-9f82fc6df6ef_a3f47a56-d191-4c3c-9f68-3f5199e18d7d_37a1bcfc0b5a4a448457957b35c73c5b', url: 'http://52.213.0.23/XMPieXMPL_REST_API', circleProjectID:'a3f47a56-d191-4c3c-9f68-3f5199e18d7d', circleProjectName: 'Rafael XMPL' }};
+var xmpcfg = {access: { accessToken: '8ae058d5-31f0-4e12-8a47-9f82fc6df6ef_a3f47a56-d191-4c3c-9f68-3f5199e18d7d_37a1bcfc0b5a4a448457957b35c73c5b', url: 'http://52.213.0.23/XMPieXMPL_REST_API', circleProjectID:'a3f47a56-d191-4c3c-9f68-3f5199e18d7d', circleProjectName: 'XMPL SDK Example' }};
