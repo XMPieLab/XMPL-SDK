@@ -3,20 +3,17 @@
 <head>
 	<meta charset="utf-8">
 	<title>Sample Refer Page</title>
-	<link href="./deps/xmp/css/xmp.css" rel="stylesheet" media="screen">
+	<link href="https://ajax.xmcircle.com/ajax/libs/xmpl/3.1.4/xmp/css/xmp.css" rel="stylesheet" media="screen">
 	<link href="./css/main.css" rel="stylesheet" media="screen">
-	<script src="./xmpcfg.js" type="text/javascript"></script>
-	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
-	<script src="./deps/xmp/js/xmp.min.js"></script>
 </head>
 <body>
 	<div ng-controller="XMPPersonalizedPage">
 		<div class="section">
 			<div class="section-title">
-				Hi, {{xmp.r['firstName']}}. wanna recommend us to a friend?
+				Hi, {{xmp.r['First Name']}}. wanna recommend us to a friend?
 			</div>
 			<div class="section-content">
-				<img width="500" xmp-image-asset="xmp.r['img']"/>
+				<img width="500" xmp-image-asset="xmp.r['MyImage']"/>
 			</div>
 		</div>
 		<div class="section">
@@ -26,21 +23,23 @@
 					Let us know about your friend:
 				</div>
 				<div>
-			      <form xmp-refer 
+			      <form xmp-refer
 			      		xmp-success-url="referThankYou.html">
 			      	<ul>
 			      		<li>
-			        		First Name : <input type="text" xmp-write-ador="xmp.referredRecipient['firstName']"  size="30">
+			        		First Name : <input type="text" xmp-write-ador="xmp.referredRecipient['First Name']"  size="30">
 			        	</li>
 			        	<li>
-			        		Last Name : <input type="text" xmp-write-ador="xmp.referredRecipient['lastName']"  size="30">
+			        		Last Name : <input type="text" xmp-write-ador="xmp.referredRecipient['Last Name']"  size="30">
 			        	</li>
 			        </ul>
 	        		<input class="btn-primary" type="submit" value="save">
-			      </form>				
+			      </form>
 				</div>
 			</div>
 		</div>
 	</div>
-
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+	<script src="https://ajax.xmcircle.com/ajax/libs/xmpl/3.1.4/xmp/js/xmp.min.js"></script>
+	<script src="./xmpcfg.js" type="text/javascript"></script>
 </body>

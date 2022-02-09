@@ -4,14 +4,14 @@
 	<meta charset="utf-8">
 	<title>Sample Recipient Page</title>
 	<link href="./deps/xmp/css/xmp.css" rel="stylesheet" media="screen">
-	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
-	<script src="./deps/xmp/js/xmp.min.js"></script>
-	<script src="./xmpcfg.js"></script>
 </head>
 <body ng-controller="XMPPersonalizedPage">
 	<div  xmp-cloak>
-		<div>hello {{xmp.r['firstName']}} {{xmp.r['lastName']}}</div>
-		<div><img width="500px" xmp-image-asset="xmp.r['img']"/></div>
+		<div>hello {{xmp.r['First Name']}}</div>
+		<div><img width="500px" xmp-image-asset="xmp.r['MyImage']"/></div>
 	</div>
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+	<script src="https://ajax.xmcircle.com/ajax/libs/xmpl/3.1.4/xmp/js/xmp.min.js"></script>
+	<script src="./xmpcfg.js"></script>
 </body>
 </html>

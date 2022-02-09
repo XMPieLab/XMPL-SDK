@@ -3,18 +3,14 @@
 <head>
 	<meta charset="utf-8">
 	<title>Sample Register to Update Page</title>
-	<link href="./deps/xmp/css/xmp.css" rel="stylesheet" media="screen">
+	<link href="https://ajax.xmcircle.com/ajax/libs/xmpl/3.1.4/xmp/css/xmp.css" rel="stylesheet" media="screen">
 	<link href="./css/main.css" rel="stylesheet" media="screen">
-	<script src="./xmpcfg.js" type="text/javascript"></script>
-	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
-	<script src="./deps/xmp/js/xmp.min.js"></script>
-
 </head>
 <body ng-controller="XMPAnonymousPage">
 	<div>
 		<div class="section" ng-show='!xmp.recipientID'>
 			<div class="section-title">
-				Welcome{{{true: (' ' + xmp.r['firstName']),false:'', }[xmp.r['firstName'].length > 0]}}! tell us a bit about yourself
+				Welcome{{{true: (' ' + xmp.r['First Name']),false:'', }[xmp.r['First Name'].length > 0]}}! tell us a bit about yourself
 			</div>
 		</div>
 		<div class="section"  ng-show='!xmp.recipientID'>
@@ -27,10 +23,10 @@
 			      <form xmp-register>
 			      	<ul>
 			      		<li>
-			        		First Name : <input type="text" xmp-write-ador="xmp.r['firstName']"  size="30">
+			        		First Name : <input type="text" xmp-write-ador="xmp.r['First Name']"  size="30">
 			        	</li>
 			        	<li>
-			        		Last Name : <input type="text" xmp-write-ador="xmp.r['lastName']"  size="30">
+			        		Last Name : <input type="text" xmp-write-ador="xmp.r['Last Name']"  size="30">
 			        	</li>
 			        </ul>
 	        		<input class="btn-primary" type="submit" value="register">
@@ -39,7 +35,7 @@
 			</div>
 		</div>
 		<div class="section" ng-show='xmp.recipientID'>
-			<div class="section-title">{{xmp.r['firstName']}}'s update form</div>
+			<div class="section-title">{{xmp.r['First Name']}}'s update form</div>
 		</div>
 		<div class="section" ng-show='xmp.recipientID'>
 			<div class="section-content">
@@ -50,10 +46,10 @@
 			      <form xmp-update>
 			      	<ul>
 			      		<li>
-			        		First Name : <input type="text" xmp-write-ador="xmp.r['firstName']"  size="30">
+			        		First Name : <input type="text" xmp-write-ador="xmp.r['First Name']"  size="30">
 			        	</li>
 			        	<li>
-			        		Last Name : <input type="text" xmp-write-ador="xmp.r['lastName']"  size="30">
+			        		Last Name : <input type="text" xmp-write-ador="xmp.r['Last Name']"  size="30">
 			        	</li>
 			        </ul>
 	        		<input class="btn-primary" type="submit" value="save">
@@ -62,4 +58,7 @@
 			</div>
 		</div>
 	</div>
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+	<script src="https://ajax.xmcircle.com/ajax/libs/xmpl/3.1.4/xmp/js/xmp.min.js"></script>
+	<script src="./xmpcfg.js" type="text/javascript"></script>
 </body>

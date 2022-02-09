@@ -3,20 +3,20 @@
 <head>
 	<meta charset="utf-8">
 	<title>Sample Refer thank you Page</title>
-	<link href="./deps/xmp/css/xmp.css" rel="stylesheet" media="screen">
+	<link href="https://ajax.xmcircle.com/ajax/libs/xmpl/3.1.4/xmp/css/xmp.css" rel="stylesheet" media="screen">
 	<link href="./css/main.css" rel="stylesheet" media="screen">
-	<script src="./xmpcfg.js" type="text/javascript"></script>
-	<script src="./deps/jquery/jquery-1.10.2.min.js"></script>
-	<script src="./deps/xmp/js/xmp.min.js"></script>
 </head>
 <body>
 	<div ng-controller="XMPPersonalizedPage">
 		<div class="section">
 			<div class="section-title">
-				Thanks {{xmp.r['firstName']}}. we will be with {{xmp.referredRecipient['firstName']}} {{xmp.referredRecipient['lastName']}} soon.
+				Thanks {{xmp.r['First Name']}}. we will be with {{xmp.referredRecipient['First Name']}} {{xmp.referredRecipient['Last Name']}} soon.
 				<br>
 				<a href="index.html">back home</a>
 			</div>
 		</div>
 	</div>
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+	<script src="https://ajax.xmcircle.com/ajax/libs/xmpl/3.1.4/xmp/js/xmp.min.js"></script>
+	<script src="./xmpcfg.js" type="text/javascript"></script>
 </body>
